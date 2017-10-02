@@ -1,5 +1,13 @@
 # Qubes OS U2F proxy
 
+This tool is intended to securely forward U2F challenge-response authentication
+between Web browser and U2F HID token without exposing the browser and USB stack
+to one another.
+
+This implements [FIDO U2F version 1.2][U2FRawMsgs] with [HID
+encapsulation][U2FHID]. See also non-normative [U2F Overview][U2FOverview] for
+introduction and U2F threat model.
+
 ## Architecture diagram
 
 ![Architecture diagram](Documentation/architecture.svg)
@@ -29,3 +37,9 @@ them in the first place. That access should not be possible.
 
 It is explicitly not a&nbsp;goal to ensure any security properties already
 provided by the U2F protocol itself.
+
+[U2FOverview]: https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-overview-v1.2-ps-20170411.html
+[U2FRawMsgs]: https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-raw-message-formats-v1.2-ps-20170411.html
+[U2FHID]: https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-hid-protocol-v1.2-ps-20170411.html
+
+<!-- vim: set tw=80 : -->
