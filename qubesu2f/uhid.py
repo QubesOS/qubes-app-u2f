@@ -439,13 +439,13 @@ class UHIDDevice(object):
         buffer = self.fd.read(ctypes.sizeof(uhid_event))
         event = uhid_event.from_buffer_copy(buffer)
         self.log.getChild('uhid').debug('_read_req() -> %r', event)
-        coro = getattr(self,
+        handler = getattr(self,
             'handle_hid_{}'.format(UHID(event.type).name.lower()))
-        asyncio.ensure_future(coro(event), loop=self.loop)
+        return handler(event)
 
     # pylint: disable=missing-docstring
 
-    async def handle_hid_start(self, event):
+    def handle_hid_start(self, event):
         self.log.getChild('uhid').debug(
             'handle_hid_start(event.start.dev_flags=%r)',
             event.start.dev_flags)
@@ -453,32 +453,32 @@ class UHIDDevice(object):
             self.dev_flags[flag] = bool(event.start.dev_flags & flag)
         self.is_started.set()
 
-    async def handle_hid_stop(self, event):
+    def handle_hid_stop(self, event):
         # pylint: disable=unused-argument
         self.log.getChild('uhid').debug('handle_hid_stop()')
         self.is_started.clear()
 
-    async def handle_hid_open(self, event):
+    def handle_hid_open(self, event):
         # pylint: disable=unused-argument
         self.log.getChild('uhid').debug('handle_hid_open()')
         self.is_open.set()
 
-    async def handle_hid_close(self, event):
+    def handle_hid_close(self, event):
         # pylint: disable=unused-argument
         self.log.getChild('uhid').debug('handle_hid_close()')
         self.is_open.clear()
 
-    async def handle_hid_output(self, event):
+    def handle_hid_output(self, event):
         # pylint: disable=unused-argument
         self.log.getChild('uhid').debug('handle_hid_output()')
         self.log.getChild('uhid').warning('WARNING: unhandled OUTPUT event')
 
-    async def handle_hid_get_report(self, event):
+    def handle_hid_get_report(self, event):
         self.log.getChild('uhid').debug('handle_hid_get_report()')
-        await self.write_uhid_req(UHID.GET_REPORT_REPLY,
-            id=event.id, err=errno.EIO)
+        asyncio.ensure_future(self.write_uhid_req(
+            UHID.GET_REPORT_REPLY, id=event.id, err=errno.EIO), loop=self.loop)
 
-    async def handle_hid_set_report(self, event):
+    def handle_hid_set_report(self, event):
         self.log.getChild('uhid').debug('handle_hid_set_report()')
-        await self.write_uhid_req(UHID.SET_REPORT_REPLY,
-            id=event.id, err=errno.EIO)
+        asyncio.ensure_future(self.write_uhid_req(
+            UHID.SET_REPORT_REPLY, id=event.id, err=errno.EIO), loop=self.loop)

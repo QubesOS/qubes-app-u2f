@@ -32,6 +32,7 @@
 
 import contextlib
 import ctypes
+import hashlib
 import io
 import logging
 import sys
@@ -69,6 +70,24 @@ class ResponseAPDUMeta(type):
 
         return cls._known_sw[const.U2F_SW.from_buffer(untrusted_sw)]
 
+# ResponseAPDU is somewhat convoluted, because its instances are used in three
+# cases:
+#  1. When creating APDU from parameters.
+#  2. When parsing APDU from buffer.
+#  3. As an exception, raised from somewhere (and sent as-is).
+#
+# In 1. this is easy, and verification has value only as sanity checking.
+# In 3. this is only slightly harder, untrusted_sw is None and taken from
+# class' definition (that's the reasoning under untrusted_sw in this case), so
+# raise APDUWrongSomethingError() just works and you can catch the exception
+# and post it itself as bytes.
+#
+# The tricky case is 2. Typically one uses classmethod from_buffer() called on
+# subclass of ResponseAPDU (like ResponseAPDUAuthenticate, even better
+# command_apdu.APDU_RESPONSE, so you don't have to guess). It should return
+# either ResponseAPDUAuthenticate, or one of the error classes.
+#
+# This is also the reason for that mess in ResponseAPDU.__new__().
 
 # [<response-data>] SW1 SW2
 class ResponseAPDU(metaclass=ResponseAPDUMeta):
@@ -200,8 +219,11 @@ class APDUError(ResponseAPDU, Exception):
         logging.debug('APDUError.__init__('
             '*args=%r, untrusted_sw=%r, **kwargs=%r)',
             args, untrusted_sw, kwargs)
+
         if untrusted_sw is None:
             untrusted_sw = bytes(self.APDU_SW)
+        # else, it will be checked in .verify_sw() by ResponseAPDU.__init__()
+
         super().__init__(*args, untrusted_sw=untrusted_sw, **kwargs)
 
     def raise_for_sw(self):
@@ -269,6 +291,9 @@ class ResponseAPDUAuthenticate(ResponseAPDU):
     '''Response to U2F_AUTHENTICATE'''
     def verify_response_data(self, *, untrusted_response_data):
         assert untrusted_response_data[0] in (0, 1)
+
+        # bytes 1-4: counter; relying party checks it, but we don't care
+
         ecdsa_sig_len = get_der_length(
             untrusted_der_data=untrusted_response_data[5:])
         assert len(untrusted_response_data) == 5 + ecdsa_sig_len
@@ -525,8 +550,14 @@ class CommandAPDUAuthenticate(CommandAPDU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # 1 is for key_handle length octet
         offset = const.U2F_NONCE_SIZE + const.U2F_APPID_SIZE + 1
         self.key_handle = self.request_data[offset:]
+
+    def get_argument_for_key(self):
+        '''Argument for qrexec call to identify the key'''
+        # use first 128 bits of SHA-256, or 32 hexadecimal digits
+        return hashlib.sha256(self.key_handle).hexdigest()[:32]
 
     def verify_p1(self, *, untrusted_p1):
         # this raises ValueError if untrusted_p1 is not one of the enum values

@@ -73,7 +73,8 @@ class U2FHIDQrexecDevice(hidemu.U2FHIDDevice):
 
     async def handle_u2f_authenticate(self, apdu):
         self.log.getChild('u2f').debug('handle_u2f_authenticate()')
-        return await self.qrexec_transaction(apdu, rpcname='u2f.Authenticate')
+        return await self.qrexec_transaction(apdu,
+            rpcname='u2f.Authenticate+{}'.format(apdu.get_argument_for_key()))
 
     async def handle_u2f_version(self, apdu):
         self.log.getChild('u2f').debug('handle_u2f_version()')

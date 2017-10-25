@@ -18,7 +18,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-'''Qrexec call: u2f.Authenticate'''
+'''Qrexec call: u2f.Register'''
 
 import asyncio
 import logging  # pylint: disable=unused-import

@@ -20,6 +20,7 @@
 
 '''Generic U2FHID emulated device.'''
 
+import asyncio
 import binascii
 import ctypes
 import functools
@@ -51,7 +52,7 @@ class U2FHIDErrorMeta(type):
 
 # pylint: disable=missing-docstring
 
-class U2FHIDError(Exception):
+class U2FHIDError(Exception, metaclass=U2FHIDErrorMeta):
     ERR = const.U2FHID_ERR.NONE
 
 class U2FHIDInvalidCmdError(U2FHIDError):
@@ -198,7 +199,7 @@ class U2FHIDDevice(uhid.UHIDDevice):
             const.U2FHID_CID.BROADCAST:
                 U2FHIDChannel(const.U2FHID_CID.BROADCAST)}
 
-    async def handle_hid_output(self, event):
+    def handle_hid_output(self, event):
         # pylint: disable=too-many-branches
 
         # TODO timeout?
@@ -254,10 +255,12 @@ class U2FHIDDevice(uhid.UHIDDevice):
                 channel.cont(packet.cont)
 
             if channel.is_finished():
-                await self.channels[packet.cid].execute()
+                asyncio.ensure_future(self.channels[packet.cid].execute(),
+                    loop=self.loop)
 
         except U2FHIDError as err:
-            await self.write_u2fhid_error(packet.cid, err)
+            asyncio.ensure_future(self.write_u2fhid_error(packet.cid, err),
+                loop=self.loop)
 
     async def write_u2fhid_response(self, cid, cmd, data):
         '''Send a U2FHID response packets, fragmenting data if needed.

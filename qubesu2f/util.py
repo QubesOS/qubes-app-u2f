@@ -123,6 +123,7 @@ async def systemd_notify(msg='READY=1'):
         return
     if path[0] == '@':
         path = '\0' + path[1:]
-    _reader, writer = await asyncio.open_unix_connection(path)
+    reader, writer = await asyncio.open_unix_connection(path)
     writer.write(msg.encode())
     writer.close()
+    reader.close()

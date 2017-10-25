@@ -18,11 +18,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-'''Qrexec call: u2f.Register'''
+'''Qrexec call: u2f.Authenticate'''
 
 import argparse
 import asyncio
-import hashlib
 import logging  # pylint: disable=unused-import
 import logging.handlers  # pylint: disable=unused-import
 import os
@@ -51,8 +50,8 @@ def main(args=None):
         apdu = proto.CommandAPDUAuthenticate.from_stream(
             sys.stdin.buffer)
 
-    if (args.key_handle_hash is not None and args.key_handle_hash !=
-            hashlib.sha256(apdu.key_handle).hexdigest()[:32]):
+    if (args.key_handle_hash is not None
+    and args.key_handle_hash != apdu.get_argument_for_key()):
         return 1
 
     asyncio.get_event_loop().run_until_complete(tools.mux(apdu))
