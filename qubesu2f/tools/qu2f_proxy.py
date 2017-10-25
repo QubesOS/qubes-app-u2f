@@ -22,12 +22,15 @@
 
 import argparse
 import asyncio
+import functools
 import logging
 import signal
 
 from .. import const
 from .. import hidemu
 from .. import proto
+from .. import tools
+from .. import uhid
 from .. import util
 
 
@@ -48,7 +51,7 @@ class U2FHIDQrexecDevice(hidemu.U2FHIDDevice):
         :param qubesu2f.proto.CommandAPDU capdu: command APDU
         :param str rpcname: name of the qrexec call
         '''
-        # TODO timeout?
+        # TODO timeout? not really needed, browser will time out itself
         qrexec_client = await asyncio.create_subprocess_exec(
             self.qrexec_client, self.vmname, rpcname,
             stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
@@ -90,28 +93,38 @@ parser.add_argument('--quiet', '-q',
     dest='loglevel',
     action='append_const', const=+10,
     help='decrease verbosity')
+
+parser_hid = parser.add_argument_group('HID lowlevel configuration')
+
+parser_hid.add_argument('--hid-name', metavar='NAME',
+    help='device name (max 128 bytes)')
+parser_hid.add_argument('--hid-phys', metavar='PHYS',
+    help='physical interface identifier (max 64 bytes)')
+parser_hid.add_argument('--hid-serial', '--hid-uniq', metavar='SERIAL',
+    type=bytes,
+    help='serial number (max 64 bytes)')
+parser_hid.add_argument('--hid-vendor', '--hid-vid', metavar='VENDOR-ID',
+    type=functools.partial(int, base=16),
+    help='vendor ID (uint16 hexadecimal)')
+parser_hid.add_argument('--hid-product', '--hid-pid', metavar='PRODUCT-ID',
+    type=functools.partial(int, base=16),
+    help='product ID (uint16 hexadecimal)')
+parser_hid.add_argument('--hid-version', metavar='VERSION',
+    type=int,
+    help='version (uint32)')
+parser_hid.add_argument('--hid-bus', metavar='BUS',
+    type=tools.enum_getter(uhid.BUS),
+    help='bus (uint16 or constant name without BUS_)')
+parser_hid.add_argument('--hid-country', metavar='COUNTRY',
+    help='country (uint32)')
+parser_hid.add_argument('--hid-rdesc', '--hid-rd', metavar='REPORT-DESCRIPTOR',
+    type=bytes,
+    help='careful with this')
+
 parser.add_argument('vmname', metavar='VMNAME',
     help='the name of the vm')
 
 parser.set_defaults(loglevel=[logging.WARNING])
-
-# TODO parser name = ''
-# TODO parser serial = b'\0'
-# TODO parser vendor = 0xdead
-# TODO parser product = 0xbeef
-# TODO parser version = 0
-# TODO parser bus = BUS.USB
-# TODO parser phys = b'\0'
-# TODO parser country = 0
-# TODO parser rdesc = b'\0'
-
-#parser.add_argument('--bus', '-b',
-#    type=int,
-#    help='USB bus number (0 for all) (default: %d)')
-#parser.add_argument('--device', '-d',
-#    type=int,
-#    help='USB device number (<0 for all) (default: %d)')
-#parser.set_defaults(bus=0, device=-1)
 
 async def _sighandler(loop, device):
     await device.close()
@@ -130,7 +143,18 @@ def main(args=None):
         level=sum(args.loglevel))
     loop = asyncio.get_event_loop()
 
-    device = U2FHIDQrexecDevice(args.vmname, loop=loop)
+    device = U2FHIDQrexecDevice(args.vmname,
+        name=args.hid_name,
+        phys=args.hid_phys,
+        serial=args.hid_serial,
+        vendor=args.hid_vendor,
+        product=args.hid_product,
+        version=args.hid_version,
+        bus=args.hid_bus,
+        country=args.hid_country,
+        rdesc=args.hid_rdesc,
+        loop=loop)
+
     loop.run_until_complete(device.open())
     loop.run_until_complete(util.systemd_notify())
 

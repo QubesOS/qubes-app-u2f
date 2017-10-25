@@ -180,7 +180,7 @@ ignore-imports=no
 [BASIC]
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=i,j,k,ex,Run,_,fd,sw,parser,p1,p2,lc,le
+good-names=i,j,k,ex,Run,_,fd,sw,p1,p2,lc,le
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,toto,tutu,tata
@@ -215,7 +215,7 @@ method-rgx=[a-z_][a-z0-9_]{2,30}$
 method-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct constant names
-const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
+const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__)|parser(_\w+)?)$
 
 # Naming hint for constant names
 const-name-hint=(([A-Z_][A-Z0-9_]*)|(__.*__))$

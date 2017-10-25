@@ -114,6 +114,11 @@ class U2F_AUTH(enum.IntEnum):
     ENFORCE = 0x03
     NO_ENFORCE = 0x08
 
+@enum.unique
+class U2F_AUTH_USER_PRESENCE(enum.IntEnum):
+    NOT_VERIFIED = 0
+    VERIFIED = 1
+
 # Version
 
 U2F_VERSION = 'U2F_V2'
@@ -149,7 +154,7 @@ class U2FHID(enum.IntEnum):
 @enum.unique
 class U2FHID_CAPABILITY(enum.IntEnum):
     WINK = 1 << 0
-    LOCK = 2 << 0
+    LOCK = 1 << 1
 
 @enum.unique
 class U2FHID_ERR(enum.IntEnum):
@@ -161,10 +166,10 @@ class U2FHID_ERR(enum.IntEnum):
     MSG_TIMEOUT = 5
     CHANNEL_BUSY = 6
 
-    # these are out of spec, but found in reference implementation
-    LOCK_REQUIRED = 10
-    INVALID_CID = 11
-    OTHER = 127
+    # these are out of spec, but found in CTAP2 and in reference implementation
+    LOCK_REQUIRED = 0x0A
+    INVALID_CHANNEL = 0x0B
+    OTHER = 0x7F
 
 U2FHID_ERR_MSG = _UnknownDict({
     U2FHID_ERR.NONE:
@@ -184,11 +189,11 @@ U2FHID_ERR_MSG = _UnknownDict({
 
     # these are out of spec, but found in reference implementation
     U2FHID_ERR.LOCK_REQUIRED:
-        'Device likes to be locked (non-standard)',
-    U2FHID_ERR.INVALID_CID:
-        'Where did you get that CID? (non-standard)',
+        'Command requires channel lock (CTAP2)',
+    U2FHID_ERR.INVALID_CHANNEL:
+        'Command not allowed on this cid (CTAP2)',
     U2FHID_ERR.OTHER:
-        'Other error (non-standard)',
+        'Other unspecified error (CTAP2)',
 })
 
 QREXEC_CLIENT = '/usr/bin/qrexec-client-vm'

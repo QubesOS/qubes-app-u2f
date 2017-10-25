@@ -41,7 +41,7 @@ from . import const
 from . import util
 
 class ResponseAPDUMeta(type):
-    '''Metaclass for :py:class:`AbstractResponseAPDU`'''
+    '''Metaclass for :py:class:`ResponseAPDU`'''
     # pylint: disable=no-self-argument
     _known_sw = {}
     def __init__(cls, name, bases, dct):
@@ -275,6 +275,8 @@ class ResponseAPDURegister(ResponseAPDU):
             untrusted_der_data=untrusted_response_data[offset:])
         offset += x509_len
 
+        # [U2FRawMsgs] says ECDSA signature is 71-73 bytes;
+        # this is not correct, other lengths are possible
         logging.debug('offset=%r (sig)', offset)
         ecdsa_sig_len = get_der_length(
             untrusted_der_data=untrusted_response_data[offset:])
@@ -290,7 +292,7 @@ class ResponseAPDURegister(ResponseAPDU):
 class ResponseAPDUAuthenticate(ResponseAPDU):
     '''Response to U2F_AUTHENTICATE'''
     def verify_response_data(self, *, untrusted_response_data):
-        assert untrusted_response_data[0] in (0, 1)
+        const.U2F_AUTH_USER_PRESENCE(untrusted_response_data[0])  # ValueError
 
         # bytes 1-4: counter; relying party checks it, but we don't care
 
@@ -371,7 +373,7 @@ class CommandAPDU(metaclass=CommandAPDUMeta):
             raise
 
         except Exception:
-            # TODO logging
+            self.log.error('__init__ exception:', exc_info=True)
             raise APDUINSNotSupported()
 
     def __bytes__(self):
@@ -537,7 +539,7 @@ class CommandAPDURegister(CommandAPDU):
         request_data = untrusted_request_data
         return request_data
 
-    # XXX this is unspecified, but chromium seems to include it
+    # this is unspecified, but at least chromium seems to include it
     def verify_p1(self, *, untrusted_p1):
         # this raises ValueError if untrusted_p1 is not one of the enum values
         p1 = const.U2F_AUTH(untrusted_p1)
@@ -670,7 +672,7 @@ def get_der_length(*, untrusted_der_data):
     elif untrusted_l == 0x82:  # length in two following octets
         return util.u16n_read(untrusted_der_data, 2) + 4
 
-    # longer than 65536, or not DER at all
+    # longer than 65535 octets, or not DER at all
     raise AssertionError()
 
     # Wasn't that simple? The world is a happier place with ASN.1.

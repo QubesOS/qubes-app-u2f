@@ -77,8 +77,8 @@ class U2FHIDChannelBusyError(U2FHIDError):
 class U2FHIDLockRequiredError(U2FHIDError):
     ERR = const.U2FHID_ERR.LOCK_REQUIRED
 
-class U2FHIDInvalidCidError(U2FHIDError):
-    ERR = const.U2FHID_ERR.INVALID_CID
+class U2FHIDInvalidChannelError(U2FHIDError):
+    ERR = const.U2FHID_ERR.INVALID_CHANNEL
 
 class U2FHIDOtherError(U2FHIDError):
     ERR = const.U2FHID_ERR.OTHER
@@ -217,7 +217,7 @@ class U2FHIDDevice(uhid.UHIDDevice):
                     try:
                         self.channels[packet.cid].sync()
                     except KeyError:
-                        raise U2FHIDInvalidCidError()
+                        raise U2FHIDInvalidChannelError()
                     return
 
                 try:
@@ -236,14 +236,14 @@ class U2FHIDDevice(uhid.UHIDDevice):
                 try:
                     expected_cid = method.u2fhid_expected_cid
                     if packet.cid != expected_cid:
-                        raise U2FHIDInvalidCmdError()
+                        raise U2FHIDInvalidChannelError()
                 except AttributeError:
                     pass
 
                 try:
                     channel = self.channels[packet.cid]
                 except KeyError:
-                    raise U2FHIDInvalidCidError()
+                    raise U2FHIDInvalidChannelError()
 
                 channel.init(packet.init, method)
 
@@ -251,7 +251,7 @@ class U2FHIDDevice(uhid.UHIDDevice):
                 try:
                     channel = self.channels[packet.cid]
                 except KeyError:
-                    raise U2FHIDInvalidCidError()
+                    raise U2FHIDInvalidChannelError()
                 channel.cont(packet.cont)
 
             if channel.is_finished():
@@ -344,7 +344,7 @@ class U2FHIDDevice(uhid.UHIDDevice):
                 bytes(await handle(apdu)))
         except proto.APDUError as err:
             self.log.getChild('u2fhid').info(
-                'handle_u2fhid_msg(cid=%#08x) err=%r', cid, err, exc_info=err)
+                'handle_u2fhid_msg(cid=%#08x) err=%r', cid, err, exc_info=True)
             await self.write_u2fhid_response(cid, const.U2FHID.MSG, bytes(err))
 
     # 4.1.2 _INIT

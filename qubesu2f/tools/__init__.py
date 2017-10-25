@@ -21,6 +21,8 @@
 '''Common features of the command-line tools.'''
 
 import asyncio
+import enum
+import itertools
 import logging
 import sys
 
@@ -101,3 +103,22 @@ def _mux_device(device, capdu):
 
     # pylint: disable=no-member
     return capdu.APDU_RESPONSE.from_buffer(untrusted_data=rapdu)
+
+def enum_getter(enum_type):
+    '''For use as ``type=`` argument to :class:`argparse.ArgumentParser`'''
+
+    enum_builtin_type = next(itertools.dropwhile(
+        (lambda t: issubclass(t, enum.Enum)), enum_type.__mro__))
+
+    if enum_builtin_type is object:
+        # this is needed to solve ambiguity between 6 and '6'
+        raise TypeError('need an uniform enum; mix a builtin type '
+            'into your Enum class, or use IntEnum which does the same')
+
+    def _getter(value):
+        try:
+            return enum_type(enum_builtin_type(value))
+        except ValueError:
+            return getattr(enum_type, value)
+
+    return _getter
