@@ -2,3 +2,4 @@ qubesu2f/__pycache__
 qubesu2f.egg-info/
 build/
 dist/
+Documentation/_build/

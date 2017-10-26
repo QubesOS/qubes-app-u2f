@@ -1,0 +1,131 @@
+.. program:: qu2f-proxy
+
+:program:`qu2f-proxy` -- U2F proxy daemon
+=========================================
+
+Synopsis
+--------
+
+:command:`qu2f-proxy`
+[--help]
+[--verbose]
+[--quiet]
+[--hid-name *NAME*]
+[--hid-phys *PHYS*]
+[--hid-serial *SERIAL*]
+[--hid-vendor *VENDOR*]
+[--hid-product *PRODUCT*]
+[--hid-version *VERSION*]
+[--hid-bus *BUS*]
+[--hid-country *COUNTRY*]
+[--hid-rdesc *DESCRIPTOR*]
+[*VMNAME*]
+
+Description
+-----------
+
+This daemon emulates a HID device which forwards U2F requests over qrexec to
+a real device in a domain which holds USB host.
+
+Options
+-------
+
+Basic options
+^^^^^^^^^^^^^
+
+.. option:: --help, -h
+
+    Show help message and exit.
+
+.. option:: --verbose, -v
+
+    Increase verbosity. (:py:mod:`logging` loglevel += 10)
+
+.. option:: --quiet, -q
+
+    Decrease verbosity. (:py:mod:`logging` loglevel -= 10)
+
+HID lowlevel configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following options fill the device struct with custom values. The default
+values are sane.
+
+.. code-block:: c
+
+    struct uhid_create2_req {
+           __u8 name[128];
+           __u8 phys[64];
+           __u8 uniq[64];
+           __u16 rd_size;
+           __u16 bus;
+           __u32 vendor;
+           __u32 product;
+           __u32 version;
+           __u32 country;
+           __u8 rd_data[HID_MAX_DESCRIPTOR_SIZE];
+    } __attribute__((__packed__));
+
+.. option:: --hid-name <NAME>
+
+    The ``name`` field (at most 128 bytes).
+
+.. option:: --hid-phys <PHYS>
+
+    The ``phys`` field (at most 64 bytes).
+
+.. option:: --hid-serial <SERIAL>, --hid-uniq <SERIAL>
+
+    The ``uniq`` field, which is a serial number (at most 64 bytes).
+
+.. option:: --hid-vendor <VENDOR>
+
+    The ``vendor`` field, given as 4 hexadecimal digits.
+
+.. option:: --hid-product <PRODUCT>
+
+    The ``product`` field, given as 4 hexadecimal digits.
+
+.. option:: --hid-version <PRODUCT>
+
+    The ``version`` field, given as decimal number.
+
+.. option:: --hid-bus <BUS>
+
+    The ``version`` field, given as decimal number or symbolic name like
+    ``USB``. The choices are: ``PCI`` (1), ``ISAPNP`` (2), ``USB`` (3), ``HIL``
+    (4), ``BLUETOOTH`` (5), ``VIRTUAL`` (6), ``ISA`` (16), ``I8042`` (17),
+    ``XTKBD`` (18), ``RS232`` (19), ``GAMEPORT`` (20), ``PARPORT`` (21),
+    ``AMIGA`` (22), ``ADB`` (23), ``I2C`` (24), ``HOST`` (25), ``GSC`` (26),
+    ``ATARI`` (27), ``SPI`` (28), ``RMI`` (29), ``CEC`` (30), ``INTEL_ISHTP``
+    (31).
+
+.. option:: --hid-country <COUNTRY>
+
+    The ``country`` field, given as decimal number.
+
+.. option:: --hid-rdesc <DESCRIPTOR>, --hid-rd <DESCRIPTOR>
+
+    The ``rd_data`` field, a report descriptor. The ``rd_size`` will be set to
+    the correct value.
+
+    Careful with this one, because it is this value by which the browser
+    recognizes the device.
+
+Qrexec calls
+------------
+
+``u2f.Register``
+    This is the call used for the U2F_REGISTER call. It is handled by
+    :manpage:`qu2f-register(1)`.
+
+``u2f.Authenticate``
+    This is the call used for the U2F_AUTHENTICATE call. It is handled by
+    :manpage:`qu2f-authenticate(1)`.
+
+Author
+------
+
+| Wojtek Porczyk <woju@invisiblethingslab.com>
+
+.. vim: tw=80
