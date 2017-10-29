@@ -197,23 +197,3 @@ U2FHID_ERR_MSG = _UnknownDict({
 })
 
 QREXEC_CLIENT = '/usr/bin/qrexec-client-vm'
-
-#
-# usbmon
-#
-
-# /usr/include/asm-generic/ioctl.h
-#_IOC_NONE = 0
-_IOC_WRITE = 1
-#_IOC_READ = 2
-
-def _IOC(dir, type, nr, size):
-    # pylint: disable=redefined-builtin
-    return (dir << 30) | (type << 8) | (nr << 0) | (size << 16)
-
-def _IOW(type, nr, size):
-    # pylint: disable=redefined-builtin
-    return _IOC(_IOC_WRITE, type, nr, size)
-
-MON_IOC_MAGIC = 0x92
-#MON_IOCX_GETX = _IOW(MON_IOC_MAGIC, 10, ctypes.sizeof(_USBMonGetArg))
