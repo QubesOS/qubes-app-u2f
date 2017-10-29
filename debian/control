@@ -1,0 +1,21 @@
+Source: qubes-u2f
+Section: utils
+Priority: optional
+Maintainer: Wojtek Porczyk <woju@invisiblethingslab.com>
+Build-Depends:
+ python3-sphinx,
+ debhelper (>= 9), dh-python, python3-all, python3-setuptools
+X-Python3-Version: >= 3.5
+Standards-Version: 3.9.5
+Homepage: https://github.com/QubesOS/qubes-app-u2f.git
+Vcs-Git: https://github.com/QubesOS/qubes-app-u2f.git
+Vcs-Browser: https://github.com/QubesOS/qubes-app-u2f.git
+
+Package: qubes-u2f
+Architecture: all
+Depends:
+ python3-u2flib-host,
+ ${python3:Depends},
+ ${misc:Depends}
+Description: Qubes OS U2F proxy
+ A secure forwarder for U2F messages.
