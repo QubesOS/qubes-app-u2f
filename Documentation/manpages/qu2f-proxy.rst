@@ -93,12 +93,32 @@ values are sane.
 .. option:: --hid-bus <BUS>
 
     The ``version`` field, given as decimal number or symbolic name like
-    ``USB``. The choices are: ``PCI`` (1), ``ISAPNP`` (2), ``USB`` (3), ``HIL``
-    (4), ``BLUETOOTH`` (5), ``VIRTUAL`` (6), ``ISA`` (16), ``I8042`` (17),
-    ``XTKBD`` (18), ``RS232`` (19), ``GAMEPORT`` (20), ``PARPORT`` (21),
-    ``AMIGA`` (22), ``ADB`` (23), ``I2C`` (24), ``HOST`` (25), ``GSC`` (26),
-    ``ATARI`` (27), ``SPI`` (28), ``RMI`` (29), ``CEC`` (30), ``INTEL_ISHTP``
-    (31).
+    ``BLUETOOTH``. The choices are:
+    ``PCI`` (1),
+    ``ISAPNP`` (2),
+    ``USB`` (3),
+    ``HIL`` (4),
+    ``BLUETOOTH`` (5),
+    ``VIRTUAL`` (6),
+    ``ISA`` (16),
+    ``I8042`` (17),
+    ``XTKBD`` (18),
+    ``RS232`` (19),
+    ``GAMEPORT`` (20),
+    ``PARPORT`` (21),
+    ``AMIGA`` (22),
+    ``ADB`` (23),
+    ``I2C`` (24),
+    ``HOST`` (25),
+    ``GSC`` (26),
+    ``ATARI`` (27),
+    ``SPI`` (28),
+    ``RMI`` (29),
+    ``CEC`` (30),
+    ``INTEL_ISHTP`` (31).
+
+    The default is ``BLUETOOTH`` (5), because of compatibility issues with
+    hidapi's hidraw backend.
 
 .. option:: --hid-country <COUNTRY>
 

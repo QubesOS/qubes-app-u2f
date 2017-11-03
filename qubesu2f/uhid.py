@@ -315,10 +315,17 @@ class UHIDDevice(object):
     vendor = 0xdead
     product = 0xbeef
     version = 0
-    bus = BUS.USB
     phys = b'\0'
     country = 0
     rdesc = b'\0'  # TODO craft some null descriptor
+
+    # Hidapi's hidraw backend assumes the device is either on BUS_USB or
+    # BUS_BLUETOOTH. If it is BUS_USB, some additional introspection on /sys is
+    # performed, which obviously fails. So let's set it to BUS_BLUETOOTH.
+    # See https://github.com/signal11/hidapi/blob/master/linux/hid.c and
+    # https://github.com/prefiks/u2f4moz/blob/master/c_src/hidapi/hid-linux-hidraw.c
+    # (function `get_device_string` in both cases).
+    bus = BUS.BLUETOOTH
 
     def __init__(self, name=None, serial=None, vendor=None, product=None,
             version=None, bus=None, phys=None, country=None, rdesc=None, *,
