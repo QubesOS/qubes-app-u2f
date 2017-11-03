@@ -14,12 +14,11 @@ introduction and U2F threat model.
 
 ## Requirements
 
-*This section is a draft*
+Debian 9 (stretch) or Fedora 25,
+Python 3.5,
+https://github.com/Yubico/python-u2flib-host.
 
-```
-dnf install python3-hidapi python3-devel libusb-devel systemd-devel
-pip3 install python_u2flib_host
-```
+For building manpages: `python3-sphinx`.
 
 ## Incompatibilities
 
