@@ -2,6 +2,7 @@ PYTHON ?= python3
 UNITDIR ?= /usr/lib/systemd/system
 MANDIR ?= /usr/share/man
 QREXECDIR ?= /etc/qubes-rpc
+UDEVRULESDIR ?= /lib/udev/rules.d
 
 .PHONY: all
 all:
@@ -15,6 +16,8 @@ install:
 	install -t $(DESTDIR)$(UNITDIR) systemd/*
 	install -d $(DESTDIR)$(QREXECDIR)
 	install -t $(DESTDIR)$(QREXECDIR) qubes-rpc/*
+	install -d $(DESTDIR)$(UDEVRULESDIR)
+	install -t $(DESTDIR)$(UDEVRULESDIR) udev/*
 
 .PHONY: install
 install-policy:

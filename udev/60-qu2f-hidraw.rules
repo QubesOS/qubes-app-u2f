@@ -1,0 +1,5 @@
+ACTION=="remove", GOTO="qu2f_hidraw_end"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="f055", ATTRS{idProduct}=="f1d0", MODE="0666"
+LABEL="qu2f_hidraw_end"
+
+# vim: ft=udevrules

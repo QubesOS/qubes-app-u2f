@@ -31,6 +31,7 @@ make -C Documentation man SPHINXBUILD=sphinx-build-%{python3_version}
 %install
 make install \
     UNITDIR=%{_unitdir} \
+    UDEVRULESDIR=%{_udevrulesdir} \
     DESTDIR=$RPM_BUILD_ROOT
 
 make -C Documentation install \
@@ -48,6 +49,7 @@ make -C Documentation install \
 %{_sysconfdir}/qubes-rpc/u2f.Authenticate
 
 %{_unitdir}/qubes-u2fproxy@.service
+%{_udevrulesdir}/60-qu2f-hidraw.rules
 
 %{python3_sitelib}/qubesu2f-%{version}-*.egg-info
 
