@@ -1,0 +1,28 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+#DH_VERBOSE = 1
+
+# see EXAMPLES in dpkg-buildflags(1) and read /usr/share/dpkg/*
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/default.mk
+
+export PYBUILD_NAME=qubesu2f
+
+# main packaging script based on dh7 syntax
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_auto_build:
+	$(MAKE)
+	$(MAKE) -C Documentation man
+
+override_dh_install:
+	make install DESTDIR=$(CURDIR)/debian/qubes-u2f SETUPOPTS=--install-layout=deb
+	$(MAKE) -C Documentation install DESTDIR=$(CURDIR)/debian/qubes-u2f
+
+# debmake generated override targets
+# This is example for Cmake (See http://bugs.debian.org/641051 )
+#override_dh_auto_configure:
+#	dh_auto_configure -- \
+#	-DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH)
