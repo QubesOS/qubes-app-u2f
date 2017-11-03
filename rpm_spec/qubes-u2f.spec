@@ -11,6 +11,7 @@ License:	GPL2+
 URL:		https://github.com/QubesOS/qubes-app-u2f
 
 BuildArch:  noarch
+BuildRequires:	python3-devel
 BuildRequires:	python3-sphinx
 
 Requires:	python3
