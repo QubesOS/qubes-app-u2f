@@ -1,1 +1,1 @@
-$anyvm sys-usb allow
+$anyvm sys-usb allow,user=root
