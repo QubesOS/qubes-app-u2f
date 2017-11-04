@@ -1,7 +1,7 @@
 %{!?version: %define version %(cat version)}
 %define _builddir %(pwd)
 
-Name:		qubes-u2f
+Name:		qubes-u2f-dom0
 Version:	%{version}
 Release:	1%{?dist}
 Summary:    Qubes OS U2F proxy policy files
