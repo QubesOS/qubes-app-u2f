@@ -4,3 +4,5 @@ build/
 dist/
 pkgs/
 Documentation/_build/
+debian/changelog.dist
+debian/changelog.stretch

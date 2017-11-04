@@ -92,7 +92,7 @@ values are sane.
 
 .. option:: --hid-bus <BUS>
 
-    The ``version`` field, given as decimal number or symbolic name like
+    The ``bus`` field, given as decimal number or symbolic name like
     ``BLUETOOTH``. The choices are:
     ``PCI`` (1),
     ``ISAPNP`` (2),
