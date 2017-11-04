@@ -3,7 +3,7 @@ Description=U2F proxy for %i
 
 [Service]
 Type=notify
-ExecStart=/usr/bin/qubes-u2fproxy %i
+ExecStart=/usr/bin/qu2f-proxy %i
 StandardOutput=syslog
 KillMode=process
 Restart=on-failure
