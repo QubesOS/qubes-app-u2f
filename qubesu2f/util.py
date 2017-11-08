@@ -24,6 +24,7 @@ import asyncio
 import binascii
 import ctypes
 import os
+import socket
 
 class raw_data(object):
     '''Accessor for ctypes' byte arrays in structures.
@@ -113,17 +114,69 @@ def maybe_hexlify(untrusted_data, maxsize=None):
             else untrusted_data))
     return untrusted_data
 
-async def systemd_notify(msg='READY=1'):
+
+class SystemDNotifyProtocol(asyncio.DatagramProtocol):
+    '''Protocol for talking to that init replacement.
+
+    >>> transport, protocol = await loop.create_datagram_endpoint(
+    ...     SystemDNotifyProtocol,
+    ...     sock=socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM))
+    >>> protocol.notify(ready=1, status='started')
+    >>> transport.close()
+
+    If `NOTIFY_SOCKET` environment variable is not set (meaning we are not
+    running under that particular init replacement), the protocol silently does
+    nothing. No validation is performed on the messages.
+    '''
+    def __init__(self):
+        self.transport = None
+
+        try:
+            addr = os.environ['NOTIFY_SOCKET']
+        except KeyError:
+            self.addr = None
+        else:
+            if addr[0] == '@':
+                addr = '\0' + addr[1:]
+            self.addr = addr
+
+    def connection_made(self, transport):
+        # pylint: disable=missing-docstring
+        self.transport = transport
+
+    def notify(self, **kwargs):
+        '''Send some messages
+
+        *kwargs* are sent, with the keyword turned to uppercase.
+        '''
+        if self.addr is None:
+            return
+        for k, v in kwargs.items():
+            self.transport.sendto(
+                '{}={}'.format(k.upper(), v).encode('utf-8'), self.addr)
+
+async def systemd_notify(**kwargs):
     '''Send a message to certain init replacement
 
-    :param str msg: the message
+    >>> systemd_notify(ready=1, status='started')
+
+    If no messages are specified, a single `READY=1` message is sent.
+
+    .. seealso:: :manpage:`sd_notify(3)`
     '''
-    path = os.getenv('NOTIFY_SOCKET')
-    if path is None:
+
+    if not kwargs:
+        kwargs = {'READY': 1}
+    loop = asyncio.get_event_loop()
+
+    # XXX asyncio will support loop.create_datagram_endpoint() with AF_UNIX
+    # in Python 3.7 (https://bugs.python.org/issue31245)
+    try:
+        transport, protocol = await loop.create_datagram_endpoint(
+            SystemDNotifyProtocol,
+            sock=socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM))
+    except KeyError:
         return
-    if path[0] == '@':
-        path = '\0' + path[1:]
-    reader, writer = await asyncio.open_unix_connection(path)
-    writer.write(msg.encode())
-    writer.close()
-    reader.close()
+
+    protocol.notify(**kwargs)
+    transport.close()
