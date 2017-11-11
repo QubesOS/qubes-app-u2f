@@ -163,6 +163,15 @@ class ResponseAPDU(metaclass=ResponseAPDUMeta):
     def __bytes__(self):
         return self.response_data + bytes(self.sw)
 
+    def hexdump_response_data(self):
+        # pylint: disable=missing-docstring
+        return util.hexlify(self.response_data)
+
+    def hexdump(self):
+        '''Retur a hexdump of the packet.'''
+        return ' '.join(filter(bool,
+            (self.hexdump_response_data(), util.hexlify(bytes(self.sw)))))
+
     # pylint: disable=no-self-use
 
     def verify_response_data(self, *, untrusted_response_data):
@@ -250,10 +259,25 @@ class APDUINSNotSupported(APDUError):
 class APDUExecutionError(APDUError):
     APDU_SW = const.U2F_SW.EXECUTION_ERROR
 
+class APDUWrongP1P2Error(APDUError):
+    APDU_SW = const.U2F_SW.WRONG_P1_P2
+
 # pylint: enable=missing-docstring
 
 class ResponseAPDURegister(ResponseAPDU):
     '''Response for U2F_REGISTER'''
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # this function is not security-critical, the data is already verified
+        kh_offset = 1 + const.P256_POINT_SIZE + 1
+        self._key_handle_len = self.response_data[kh_offset - 1]
+        self.key_handle = (
+            self.response_data[kh_offset:kh_offset+self._key_handle_len])
+
+        x509_offset = kh_offset + self._key_handle_len + 1
+        self._x509_len = self.response_data[x509_offset - 1]
+
     def verify_response_data(self, *, untrusted_response_data):
         offset = 0
 
@@ -288,6 +312,10 @@ class ResponseAPDURegister(ResponseAPDU):
         response_data = untrusted_response_data
         return response_data
 
+    def hexdump_response_data(self):
+        return util.hexlify_with_parition(self.response_data,
+            1, const.P256_POINT_SIZE, 1, self._key_handle_len, self._x509_len)
+
 
 class ResponseAPDUAuthenticate(ResponseAPDU):
     '''Response to U2F_AUTHENTICATE'''
@@ -302,6 +330,9 @@ class ResponseAPDUAuthenticate(ResponseAPDU):
 
         response_data = untrusted_response_data
         return response_data
+
+    def hexdump_response_data(self):
+        return util.hexlify_with_parition(self.response_data, 1, 4)
 
 
 class ResponseAPDUVersion(ResponseAPDU):
@@ -376,23 +407,45 @@ class CommandAPDU(metaclass=CommandAPDUMeta):
             self.log.error('__init__ exception:', exc_info=True)
             raise APDUINSNotSupported()
 
-    def __bytes__(self):
-        buf = io.BytesIO()
-        buf.write(bytes((self.cla, self.ins, self.p1, self.p2)))
+    def _assemble(self, write):
+        write(bytes((self.cla,)))
+        write(bytes((self.ins,)))
+        write(bytes((self.p1,)))
+        write(bytes((self.p2,)))
 
         if self.request_data or self.le:
             # HID always uses extended length APDU encoding [U2FHID 2]
-            buf.write(b'\0')
+            write(b'\0')
 
         if self.request_data:
-            buf.write(util.u16n_write(len(self.request_data)))
-            buf.write(self.request_data)
+            write(util.u16n_write(len(self.request_data)))
+            write(self.request_data, request_data=True)
 
         if self.le:
             # for 65536 this is 0x00 0x00
-            buf.write(util.u16n_write(self.le))
+            write(util.u16n_write(self.le))
 
+    def __bytes__(self):
+        buf = io.BytesIO()
+        def write(token, request_data=None):
+            # pylint: disable=unused-argument,missing-docstring
+            return buf.write(token)
+        self._assemble(write)
         return buf.getvalue()
+
+    def hexdump(self):
+        '''Return a hexdump of the packet'''
+        tokens = []
+        def write(token, request_data=None):
+            # pylint: disable=missing-docstring
+            tokens.append(util.hexlify(token) if not request_data
+                else self.hexdump_request_data())
+        self._assemble(write)
+        return ' '.join(tokens)
+
+    def hexdump_request_data(self):
+        # pylint: disable=missing-docstring
+        return util.hexlify(self.request_data)
 
     # pylint: disable=no-self-use
 
@@ -545,6 +598,10 @@ class CommandAPDURegister(CommandAPDU):
         p1 = const.U2F_AUTH(untrusted_p1)
         return p1
 
+    def hexdump_request_data(self):
+        return util.hexlify_with_parition(self.request_data,
+            const.U2F_NONCE_SIZE)
+
 class CommandAPDUAuthenticate(CommandAPDU):
     '''U2F_AUTHENTICATE'''
     APDU_INS = const.U2F.AUTHENTICATE
@@ -573,6 +630,10 @@ class CommandAPDUAuthenticate(CommandAPDU):
         assert len(untrusted_request_data) == kh_offset + 1 + kh_len
         request_data = untrusted_request_data
         return request_data
+
+    def hexdump_request_data(self):
+        return util.hexlify_with_parition(self.request_data,
+            const.U2F_NONCE_SIZE, const.U2F_APPID_SIZE, 1)
 
 class CommandAPDUVersion(CommandAPDU):
     '''U2F_VERSION'''
@@ -648,6 +709,16 @@ class U2FHIDPacket(ctypes.BigEndianStructure):
         return '{}(cid={:#08x}, type={!s}, {}, data={})'.format(
             type(self).__name__, self.cid, const.U2FHID_TYPE(self.init.type),
             meta, util.hexlify(data))
+
+    def hexdump(self):
+        if self.is_init():
+            return '{:08x} {:02x} {:04x} {}'.format(self.cid,
+                (self.init.type << 7) + self.init.cmd, self.init.bcnt,
+                util.hexlify(self.init.data))
+        else:
+            return '{:08x} {:02x}  {}'.format(self.cid,
+                (self.cont.type << 7) + self.cont.seq,
+                util.hexlify(self.cont.data))
 
 # pylint: enable=too-few-public-methods,missing-docstring
 

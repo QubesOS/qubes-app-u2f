@@ -14,6 +14,7 @@ qubes-app-u2f
    :caption: Other documentation:
 
    qrexec-transport
+   example-authenticate
 
 A nice architecture diagram
 ---------------------------

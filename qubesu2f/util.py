@@ -23,6 +23,7 @@
 import asyncio
 import binascii
 import ctypes
+import itertools
 import os
 import socket
 
@@ -114,6 +115,12 @@ def maybe_hexlify(untrusted_data, maxsize=None):
             else untrusted_data))
     return untrusted_data
 
+def hexlify_with_parition(data, *lengths):
+    '''Do a little hexdump, with spaces between fields'''
+    offsets = tuple(itertools.chain(
+        (0,), itertools.accumulate(lengths), (len(data),)))
+    return ' '.join(map(hexlify, filter(bool,
+        (data[offsets[i]:offsets[i+1]] for i in range(len(offsets) - 1)))))
 
 class SystemDNotifyProtocol(asyncio.DatagramProtocol):
     '''Protocol for talking to that init replacement.

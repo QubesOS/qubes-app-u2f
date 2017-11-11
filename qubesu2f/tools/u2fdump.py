@@ -18,20 +18,24 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-# pylint: skip-file
+'''Tracer for U2FHID protocol with actual USB device.
+
+This relies on usbmon packet capture, so it is not good for uhid emulation.
+'''
+
+# well, we're working with structs, so
+# pylint: disable=too-few-public-methods,too-many-instance-attributes
 
 import argparse
 import asyncio
-import binascii
 import ctypes
 import datetime
-import enum
 import fcntl
-import io
 import signal
-import struct
 
 from .. import const
+from .. import proto
+from .. import util
 
 # https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/usb/usbmon.txt
 
@@ -110,13 +114,30 @@ class _USBMonGetArg(ctypes.Structure):
         ('alloc', ctypes.c_size_t),
     )
 
-class USBMonPacket:
-    def __init__(self, hdr, data):
-#       self.hdr = hdr
-#       self.data_raw = data
+# /usr/include/asm-generic/ioctl.h
+#_IOC_NONE = 0
+_IOC_WRITE = 1
+#_IOC_READ = 2
 
-        for attr in ('busnum', 'devnum', 'length', 'len_cap'):
-            setattr(self, attr, getattr(hdr, attr))
+def _IOC(dir, type, nr, size):
+    # pylint: disable=invalid-name,redefined-builtin
+    return (dir << 30) | (type << 8) | (nr << 0) | (size << 16)
+
+def _IOW(type, nr, size):
+    # pylint: disable=invalid-name,redefined-builtin
+    return _IOC(_IOC_WRITE, type, nr, size)
+
+MON_IOC_MAGIC = 0x92
+MON_IOCX_GETX = _IOW(MON_IOC_MAGIC, 10, ctypes.sizeof(_USBMonGetArg))
+
+
+class USBMonPacket:
+    '''A packet yielded from the monitor.'''
+    def __init__(self, hdr, data):
+        self.busnum = hdr.busnum
+        self.devnum = hdr.devnum
+        self.length = hdr.length
+        self.len_cap = hdr.len_cap
 
         self.timestamp = datetime.datetime.fromtimestamp(hdr.ts_sec,
                 tz=datetime.timezone.utc).replace(microsecond=hdr.ts_usec)
@@ -124,34 +145,24 @@ class USBMonPacket:
         self.epnum = hdr.epnum & 0xf
         self.dir_in = bool(hdr.epnum & 0x80)
 
-        self.data = data.raw[:hdr.len_cap]
+        if self.length == self.len_cap == const.HID_FRAME_SIZE:
+            self.data = proto.U2FHIDPacket.from_buffer(data)
+        else:
+            self.data = data.raw[:self.len_cap]
 
     def __str__(self):
-        return ('{:%S.%f%z} '
-                '{}:{:03d}:{} {} {}{}{} {}').format(
+        try:
+            payload = self.data.hexdump()
+        except AttributeError:
+            payload = util.hexlify(self.data)
+
+        return ('{:%S.%f} '
+                '{}:{:03d}:{} {} {}').format(
             self.timestamp, self.busnum, self.devnum, self.epnum,
-            ('I' if self.dir_in else 'O'), self.length,
-            ('!' if len(self.data) != self.length else '/'),
-            self.len_cap, binascii.hexlify(self.data).decode('ascii'))
-
-
-# /usr/include/asm-generic/ioctl.h
-#_IOC_NONE = 0
-_IOC_WRITE = 1
-#_IOC_READ = 2
-
-def _IOC(dir, type, nr, size):
-    # pylint: disable=redefined-builtin
-    return (dir << 30) | (type << 8) | (nr << 0) | (size << 16)
-
-def _IOW(type, nr, size):
-    # pylint: disable=redefined-builtin
-    return _IOC(_IOC_WRITE, type, nr, size)
-
-MON_IOC_MAGIC = 0x92
-MON_IOCX_GETX = _IOW(MON_IOC_MAGIC, 10, ctypes.sizeof(_USBMonGetArg))
+            ('I' if self.dir_in else 'O'), payload)
 
 class USBMon:
+    '''Async iterator, which yields each packet as it is received.'''
     packet_class = USBMonPacket
 
     def __init__(self, fd, bufsize=const.HID_FRAME_SIZE):
@@ -165,82 +176,27 @@ class USBMon:
         hdr = _USBMonPacket()
         data = ctypes.create_string_buffer(self.bufsize)
 
+        # pylint: disable=attribute-defined-outside-init
         arg = _USBMonGetArg()
         arg.hdr = ctypes.pointer(hdr)
         arg.data = ctypes.cast(data, ctypes.c_void_p)
         arg.alloc = ctypes.sizeof(data)
 
+        # XXX this doesn't really work with .cancel()
         await asyncio.get_event_loop().run_in_executor(None,
             fcntl.ioctl, self.fd, MON_IOCX_GETX, arg)
 
         return self.packet_class(hdr, data)
 
-class USBMonU2FHIDPacket(USBMonPacket):
-    s_u2fhid_head = struct.Struct('>IB')
-    s_u2fhid_bcnt = struct.Struct('>H')
-    s_apdu_hdr = struct.Struct('>BBBB')
-
-    _attrs = (
-        ('cid', '{:08x}'),
-        ('cmd', '{!s}'),
-        ('seq', '{:02x}'),
-        ('bcnt', '{:d}'),
-        ('cla', '{:02x}'),
-        ('ins', '{!s}'),
-        ('p1', '{:02x}'),
-        ('p2', '{:02x}'),
-        ('apdu_is_complete', '{}'),
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if len(self.data) != const.HID_FRAME_SIZE:
-            return
-
-        self.cid, cmd_or_seq = self.s_u2fhid_head.unpack_from(self.data)
-        self.is_init = bool(cmd_or_seq & TYPE_INIT)
-
-        if self.is_init:
-            self.cmd = const.U2FHID(cmd_or_seq)
-            self.seq = None
-            (self.bcnt,) = self.s_u2fhid_bcnt.unpack_from(self.data, 5)
-            self.apdu_is_complete = self.bcnt > const.HID_FRAME_SIZE - 7
-
-            if self.cmd == const.U2FHID.MSG and not self.dir_in:
-                (self.cla, self.ins, self.p1, self.p2
-                    ) = self.s_apdu_hdr.unpack_from(self.data, 7)
-                try:
-                    self.ins = const.U2F(self.ins)
-                except ValueError:
-                    self.ins = 'UNKNOWN({:02x})'.format(self.ins)
-            else:
-                self.cla = self.ins = self.p1 = self.p2 = None
-
-        else:
-            self.cmd = None
-            self.seq = cmd_or_seq
-            self.bcnt = None
-            self.apdu_is_complete = False
-            self.cla = self.ins = self.p1 = self.p2 = None
-
-    def __str__(self):
-        if len(self.data) != const.HID_FRAME_SIZE:
-            return super().__str__()
-
-        attrs = ((attr, fmt, getattr(self, attr)) for attr, fmt in self._attrs)
-        attrs = ('{} {}'.format(attr, fmt.format(value))
-            for attr, fmt, value in attrs if value is not None)
-
-        return '{}\n  {}'.format(super().__str__(), ' '.join(attrs))
-
-class U2FMon(USBMon):
-    packet_class = USBMonU2FHIDPacket
 
 async def u2fmon(bus=0, device=-1):
+    '''The actual U2F monitor. Print one U2FHID packet per line.'''
     try:
         with open(USBMONPATH.format(bus=bus), 'rb', buffering=0) as fd:
-            async for packet in U2FMon(fd):
+            async for packet in USBMon(fd):
                 if device >= 0 and packet.devnum != device:
+                    continue
+                if not packet.length == packet.len_cap == const.HID_FRAME_SIZE:
                     continue
                 print(packet)
     except asyncio.CancelledError:
@@ -248,19 +204,21 @@ async def u2fmon(bus=0, device=-1):
 
 
 def sighandler(signame, fut):
+    # pylint: disable=missing-docstring
     print('caught {}, exiting'.format(signame))
     fut.cancel()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--bus', '-b',
     type=int,
-    help='USB bus number (0 for all) (default: %d)')
+    help='USB bus number (0 for all) (default: %(default)d)')
 parser.add_argument('--device', '-d',
     type=int,
-    help='USB device number (<0 for all) (default: %d)')
+    help='USB device number (<0 for all) (default: %(default)d)')
 parser.set_defaults(bus=0, device=-1)
 
 def main(args=None):
+    # pylint: disable=missing-docstring
     args = parser.parse_args(args)
     loop = asyncio.get_event_loop()
 
