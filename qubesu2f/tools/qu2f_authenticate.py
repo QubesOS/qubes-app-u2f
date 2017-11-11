@@ -35,7 +35,7 @@ parser.add_argument('key_handle_hash', metavar='QREXEC_SERVICE_ARGUMENT',
     default=os.getenv('QREXEC_SERVICE_ARGUMENT'),
     nargs='?')
 
-def main(args=None):
+def main(args=None, mux=tools.mux):
     '''Main routine of ``u2f.Register`` qrexec call'''
 
     # uncomment for debugging
@@ -44,7 +44,7 @@ def main(args=None):
 #       handlers=[logging.handlers.SysLogHandler(address='/dev/log',
 #           facility=logging.handlers.SysLogHandler.LOG_LOCAL2)])
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     with proto.apdu_error_responder():
         apdu = proto.CommandAPDUAuthenticate.from_stream(
@@ -54,7 +54,7 @@ def main(args=None):
     and args.key_handle_hash != apdu.get_argument_for_key()):
         return 1
 
-    asyncio.get_event_loop().run_until_complete(tools.mux(apdu))
+    asyncio.get_event_loop().run_until_complete(mux(apdu))
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -30,6 +30,9 @@ if __name__ == '__main__':
             'python_u2flib_host',
         ],
         packages=setuptools.find_packages(),
+        package_data={
+            'qubesu2f.tests': ['*.xpi'],
+        },
         entry_points={
             'console_scripts': list(get_console_scripts('./qubesu2f/tools')),
         },
