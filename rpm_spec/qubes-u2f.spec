@@ -65,6 +65,7 @@ make -C Documentation install \
 %{python3_sitelib}/qubesu2f/tests/__init__.py
 %{python3_sitelib}/qubesu2f/tests/__pycache__/*
 %{python3_sitelib}/qubesu2f/tests/browser.py
+%{python3_sitelib}/qubesu2f/tests/conformance.py
 %{python3_sitelib}/qubesu2f/tests/qu2f_authenticate.py
 %{python3_sitelib}/qubesu2f/tests/qu2f_proxy.py
 %{python3_sitelib}/qubesu2f/tests/u2f_support_add_on-1.0.1-fx-linux.xpi

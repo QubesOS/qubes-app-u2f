@@ -57,6 +57,11 @@ class U2F_SW(enum.IntEnum):  # "status word", c.f. ISO7816-4 5.1.2
     # This one is taken directly from ISO7816-4, not from U2FRawMsgs,
     # we use it when qrexec call fails
     EXECUTION_ERROR = 0x6400
+
+    # This one was observed in the wild on Yubikey 4 when P1 was set to
+    # U2F_AUTH.NO_ENFORCE
+    WRONG_P1_P2 = 0x6A86
+
     NO_DIAGNOSIS = 0x6F00
 
     @classmethod
@@ -92,6 +97,8 @@ U2F_SW_MSG = _UnknownDict({
 
     U2F_SW.EXECUTION_ERROR:
         'Qrexec call failed.',
+    U2F_SW.WRONG_P1_P2:
+        'Incorrect parameters P1-P2 (ISO7816-4).',
     U2F_SW.NO_DIAGNOSIS:
         'No precise diagnosis (ISO7816-4).',
 })
