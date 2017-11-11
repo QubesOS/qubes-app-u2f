@@ -757,7 +757,7 @@ def apdu_error_responder(stream=sys.stdout.buffer, exit_on_error=True):
 
     except APDUError as err:
         # pylint: disable=no-member
-        stream.write(err.APDU_SW)
+        stream.write(bytes(err.APDU_SW))
         stream.close()
 
         if exit_on_error:

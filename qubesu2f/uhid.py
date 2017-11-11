@@ -360,7 +360,7 @@ class UHIDDevice(object):
         self._normalize_version()
 
         self.loop = loop or asyncio.get_event_loop()
-        self.fd = open('/dev/uhid', 'r+b', buffering=0)
+        self.fd = None
 
         self.is_started = asyncio.Event()
         self.is_open = asyncio.Event()
@@ -386,6 +386,7 @@ class UHIDDevice(object):
         '''Send CREATE2 event.'''
 
         self.log.getChild('uhid').debug('open()')
+        self.fd = open('/dev/uhid', 'r+b', buffering=0)
         await self.write_uhid_req(UHID.CREATE2,
             name=self.name.encode('utf-8'),
             phys=self.phys,
@@ -404,6 +405,7 @@ class UHIDDevice(object):
         self.log.debug('close()')
         await self.write_uhid_req(UHID.DESTROY)
         self.loop.remove_reader(self.fd)
+        self.fd.close()
 
     async def write_uhid_req(self, event, **kwargs):
         '''Send an event to uhid device
