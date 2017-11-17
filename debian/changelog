@@ -1,3 +1,39 @@
+qubes-u2f (1.1.0) unstable; urgency=medium
+
+  [ Wojtek Porczyk ]
+  * Add .pylintrc
+  * Documentation updates
+  * Fixes from Marek's review
+  * Misc fixes
+  * Added sphinx documentation and manpages
+  * packaging
+  * Some housekeeping around (disabled) u2fdump tool
+  * qubesu2f/uhid: change default bus to BLUETOOTH
+  * qubes-rpc-policy: user=root
+  * udev/
+  * README: diagram and requirements
+
+  [ Marek Marczykowski-Górecki ]
+  * rpm: add missing BuildRequires
+  * Exclude build on jessie
+  * rpm: fix qubes-u2f-dom0 package name
+
+  [ Wojtek Porczyk ]
+  * Fixes from Marek's commit comments
+  * systemd: fix path in the .service file
+  * Documentation: disable intersphinx
+  * qubesu2f/utils: fix NOTIFY_SOCKET
+  * udev: fix permission changing
+  * qubesu2f: fix u2fdump and record example transaction
+  * qubesu2f: add tests
+  * qubesu2f/tests: add conformance tests
+  * misc small fixes
+
+  [ Marek Marczykowski-Górecki ]
+  * Enable qubes-u2f-proxy service using qubes-service framework
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 17 Nov 2017 23:32:21 +0100
+
 qubes-u2f (1.0.0) unstable; urgency=low
 
   * Initial Release.
