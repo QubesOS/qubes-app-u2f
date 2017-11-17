@@ -11,14 +11,17 @@ export PYBUILD_NAME=qubesu2f
 
 # main packaging script based on dh7 syntax
 %:
-	dh $@ --with python3 --buildsystem=pybuild
+	dh $@ --with python3,systemd --buildsystem=pybuild
 
 override_dh_auto_build:
 	$(MAKE)
 	$(MAKE) -C Documentation man
 
 override_dh_install:
-	make install DESTDIR=$(CURDIR)/debian/qubes-u2f SETUPOPTS=--install-layout=deb
+	make install DESTDIR=$(CURDIR)/debian/qubes-u2f \
+		SETUPOPTS=--install-layout=deb \
+		UNITDIR=/lib/systemd/system \
+		PRESETDIR=/lib/systemd/system-preset
 	$(MAKE) -C Documentation install DESTDIR=$(CURDIR)/debian/qubes-u2f
 
 # debmake generated override targets

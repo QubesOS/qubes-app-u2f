@@ -1,0 +1,9 @@
+[Unit]
+Descripts=Default instance of qubes-u2f-proxy
+
+[Service]
+Type=oneshot
+ExecStart=/bin/true
+
+[Install]
+Also=qubes-u2fproxy@sys-usb.service

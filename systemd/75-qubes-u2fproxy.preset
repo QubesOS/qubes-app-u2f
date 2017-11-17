@@ -1,2 +1,2 @@
-enable qubes-u2fproxy@.service
+enable qubes-u2fproxy.service
 

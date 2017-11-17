@@ -12,4 +12,3 @@ RestartSec=1s
 
 [Install]
 WantedBy=multi-user.target
-DefaultInstance=sys-usb

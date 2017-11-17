@@ -42,13 +42,13 @@ make -C Documentation install \
     DESTDIR=$RPM_BUILD_ROOT
 
 %post
-%systemd_post qubes-u2fproxy@.service
+%systemd_post qubes-u2fproxy.service
 
 %preun
-%systemd_preun qubes-u2fproxy@.service
+%systemd_preun qubes-u2fproxy.service
 
 %postun
-%systemd_postun_with_restart qubes-u2fproxy@.service
+%systemd_postun_with_restart qubes-u2fproxy.service
 
 %files
 %doc
@@ -62,6 +62,7 @@ make -C Documentation install \
 
 %{_presetdir}/75-qubes-u2fproxy.preset
 %{_unitdir}/qubes-u2fproxy@.service
+%{_unitdir}/qubes-u2fproxy.service
 %{_udevrulesdir}/60-qu2f-hidraw.rules
 
 %{python3_sitelib}/qubesu2f-%{version}-*.egg-info
