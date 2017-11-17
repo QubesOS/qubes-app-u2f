@@ -1,5 +1,6 @@
 [Unit]
 Description=U2F proxy for %i
+ConditionPathExists=/var/run/qubes-service/qubes-u2f-proxy
 
 [Service]
 Type=notify
@@ -11,3 +12,4 @@ RestartSec=1s
 
 [Install]
 WantedBy=multi-user.target
+DefaultInstance=sys-usb

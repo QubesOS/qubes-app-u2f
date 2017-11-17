@@ -13,6 +13,8 @@ URL:		https://github.com/QubesOS/qubes-app-u2f
 BuildArch:  noarch
 BuildRequires:	python3-devel
 BuildRequires:	python3-sphinx
+%{?systemd_requires}
+BuildRequires:  systemd
 
 Requires:	python3
 Requires:	python3-u2flib-host
@@ -39,6 +41,15 @@ make -C Documentation install \
 	MANDIR=%{_mandir} \
     DESTDIR=$RPM_BUILD_ROOT
 
+%post
+%systemd_post qubes-u2fproxy@.service
+
+%preun
+%systemd_preun qubes-u2fproxy@.service
+
+%postun
+%systemd_postun_with_restart qubes-u2fproxy@.service
+
 %files
 %doc
 %{_mandir}/man1/qu2f-*.1*
@@ -49,6 +60,7 @@ make -C Documentation install \
 %{_sysconfdir}/qubes-rpc/u2f.Register
 %{_sysconfdir}/qubes-rpc/u2f.Authenticate
 
+%{_presetdir}/75-qubes-u2fproxy.preset
 %{_unitdir}/qubes-u2fproxy@.service
 %{_udevrulesdir}/60-qu2f-hidraw.rules
 
