@@ -648,6 +648,7 @@ class CommandAPDUVersion(CommandAPDU):
 # pylint: disable=too-few-public-methods,missing-docstring
 
 class U2FHIDInitResp(ctypes.BigEndianStructure):
+    _pack_ = True
     _fields_ = (
         ('_nonce', ctypes.c_uint8 * 8),
         ('cid', ctypes.c_uint32),
