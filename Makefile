@@ -14,18 +14,18 @@ install:
 	$(PYTHON) setup.py install -O1 --skip-build --root $(DESTDIR) \
 		$(SETUPOPTS)
 	install -d $(DESTDIR)$(UNITDIR)
-	install -t $(DESTDIR)$(UNITDIR) systemd/*.service
+	install -m 0644 -t $(DESTDIR)$(UNITDIR) systemd/*.service
 	install -d $(DESTDIR)$(PRESETDIR)
-	install -t $(DESTDIR)$(PRESETDIR) systemd/*.preset
+	install -m 0644 -t $(DESTDIR)$(PRESETDIR) systemd/*.preset
 	install -d $(DESTDIR)$(QREXECDIR)
 	install -t $(DESTDIR)$(QREXECDIR) qubes-rpc/*
 	install -d $(DESTDIR)$(UDEVRULESDIR)
-	install -t $(DESTDIR)$(UDEVRULESDIR) udev/*
+	install -m 0644 -t $(DESTDIR)$(UDEVRULESDIR) udev/*
 
 .PHONY: install
 install-policy:
 	install -d $(DESTDIR)$(QREXECDIR)/policy
-	install -t $(DESTDIR)$(QREXECDIR)/policy qubes-rpc-policy/*
+	install -m 0664 -t $(DESTDIR)$(QREXECDIR)/policy qubes-rpc-policy/*
 
 .PHONY: clean
 clean:
