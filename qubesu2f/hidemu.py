@@ -154,10 +154,13 @@ class U2FHIDChannel:
         self.remaining = None
         self.expected_seq = None
 
-    async def execute(self):
+    def execute(self):
         '''Invoke the callback.'''
-        await self.callback(self.cid, self.data.getvalue())
+        assert self.is_finished()
+        data = self.data.getvalue()
+        callback = self.callback
         self.sync()
+        return callback(self.cid, data)
 
 
 class U2FHIDDevice(uhid.UHIDDevice):
