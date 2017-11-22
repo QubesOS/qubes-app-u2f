@@ -165,14 +165,42 @@ class USBMon:
     '''Async iterator, which yields each packet as it is received.'''
     packet_class = USBMonPacket
 
-    def __init__(self, fd, bufsize=const.HID_FRAME_SIZE):
+    def __init__(self, fd, bufsize=const.HID_FRAME_SIZE, *, loop=None):
         self.fd = fd
         self.bufsize = bufsize
+        self.loop = loop or asyncio.get_event_loop()
+
+        self.queue = asyncio.Queue(32)
+        self.loop.add_reader(self.fd, self._reader)
 
     def __aiter__(self):
         return self
 
+    def cancel(self):
+        while True:
+            try:
+                self.queue.get_nowait()
+                self.queue.task_done()
+            except asyncio.QueueEmpty:
+                break
+        self.queue = None
+
     async def __anext__(self):
+        if self.queue is None:
+            raise StopAsyncIteration()
+
+        try:
+            packet = await self.queue.get()
+            self.queue.task_done()
+
+        except asyncio.CancelledError:
+            self.loop.remove_reader(self.fd)
+            self.cancel()
+            raise StopAsyncIteration()
+
+        return packet
+
+    def _reader(self):
         hdr = _USBMonPacket()
         data = ctypes.create_string_buffer(self.bufsize)
 
@@ -182,11 +210,12 @@ class USBMon:
         arg.data = ctypes.cast(data, ctypes.c_void_p)
         arg.alloc = ctypes.sizeof(data)
 
-        # XXX this doesn't really work with .cancel()
-        await asyncio.get_event_loop().run_in_executor(None,
-            fcntl.ioctl, self.fd, MON_IOCX_GETX, arg)
+        fcntl.ioctl(self.fd, MON_IOCX_GETX, arg)
 
-        return self.packet_class(hdr, data)
+        try:
+            self.queue.put_nowait(self.packet_class(hdr, data))
+        except asyncio.QueueFull:
+            sys.stderr.write('warning: queue full, dropping packet\n')
 
 
 async def u2fmon(bus=0, device=-1):
