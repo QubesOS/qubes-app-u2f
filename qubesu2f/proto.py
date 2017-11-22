@@ -719,7 +719,7 @@ class U2FHIDPacket(ctypes.BigEndianStructure):
                 (self.init.type << 7) + self.init.cmd, self.init.bcnt,
                 util.hexlify(self.init.data))
         else:
-            return '{:08x} {:02x}  {}'.format(self.cid,
+            return '{:08x}  {:02x} {}'.format(self.cid,
                 (self.cont.type << 7) + self.cont.seq,
                 util.hexlify(self.cont.data))
 

@@ -286,9 +286,8 @@ class U2FHIDDevice(uhid.UHIDDevice):
         ctypes.memmove(packet.init.data, data, min(len(data), chunk_size))
         data = data[chunk_size:]
 
-        self.log.getChild('u2fhid').debug(
-            'write_u2fhid_response(cid=%#08x, cmd=%s,) packet=%r',
-            cid, cmd, packet)
+        self.log.getChild('u2fhid').debug('write_u2fhid_response packet=%r',
+            packet)
         await self.write_uhid_req(uhid.UHID.INPUT2, data=bytes(packet))
 
         packet.cont.type = const.U2FHID_TYPE.CONT
@@ -312,7 +311,8 @@ class U2FHIDDevice(uhid.UHIDDevice):
         :param U2FHIDError exc: the exception
         '''
         self.log.getChild('u2fhid').debug(
-            'write_u2fhid_error(cid=%#08x, exc=%s)', cid, exc)
+            'write_u2fhid_error(cid=%#08x, exc=%s)',
+            cid, type(exc).__name__, exc_info=1)
         await self.write_u2fhid_response(cid,
             const.U2FHID.ERROR, bytes((exc.ERR,)))
 
