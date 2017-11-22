@@ -660,6 +660,8 @@ class U2FHIDInitResp(ctypes.BigEndianStructure):
     )
     nonce = util.raw_data('_nonce')
 
+assert ctypes.sizeof(U2FHIDInitResp) == 17
+
 class _U2FHIDPacketInit(ctypes.BigEndianStructure):
     _pack_ = True
     _fields_ = (
@@ -720,6 +722,9 @@ class U2FHIDPacket(ctypes.BigEndianStructure):
             return '{:08x} {:02x}  {}'.format(self.cid,
                 (self.cont.type << 7) + self.cont.seq,
                 util.hexlify(self.cont.data))
+
+assert ctypes.sizeof(U2FHIDPacket) == const.HID_FRAME_SIZE
+
 
 # pylint: enable=too-few-public-methods,missing-docstring
 
