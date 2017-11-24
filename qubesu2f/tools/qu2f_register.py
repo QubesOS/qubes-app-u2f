@@ -31,11 +31,7 @@ from .. import tools
 def main():
     '''Main routine of ``u2f.Register`` qrexec call'''
 
-    # uncomment for debugging
-#   logging.basicConfig(level=logging.NOTSET,
-#       format='%(name)s %(message)s',
-#       handlers=[logging.handlers.SysLogHandler(address='/dev/log',
-#           facility=logging.handlers.SysLogHandler.LOG_LOCAL2)])
+    tools.setup_logging()
 
     with proto.apdu_error_responder():
         apdu = proto.CommandAPDURegister.from_stream(

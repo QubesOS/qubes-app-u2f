@@ -39,6 +39,18 @@ A Python oneliner for generating key handle hash:
 
     hashlib.sha256(key_handle).hexdigest()[:32]
 
+
+Bugs
+----
+
+To enable debug log, touch either of those files:
+
+- ``/etc/qubes/u2f-debug-enable``
+
+- ``/usr/local/etc/qubes/u2f-debug-enable``
+
+The log will be sent to syslog AUTH facility.
+
 Author
 ------
 

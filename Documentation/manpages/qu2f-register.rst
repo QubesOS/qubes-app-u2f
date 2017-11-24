@@ -25,6 +25,18 @@ Qrexec calls
     On standard input a complete command APDU is expected. On standard output,
     response APDU is returned.
 
+
+Bugs
+----
+
+To enable debug log, touch either of those files:
+
+- ``/etc/qubes/u2f-debug-enable``
+
+- ``/usr/local/etc/qubes/u2f-debug-enable``
+
+The log will be sent to syslog AUTH facility.
+
 Author
 ------
 

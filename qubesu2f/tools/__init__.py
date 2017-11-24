@@ -24,12 +24,19 @@ import asyncio
 import enum
 import itertools
 import logging
+import pathlib
 import sys
 
 import u2flib_host.u2f  # pylint: disable=import-error
 
 from .. import const
 from .. import util
+
+# touch any of those to increase logging verbosity
+DEBUG_ENABLE_PATHS = [
+    '/etc/qubes/u2f-debug-enable',
+    '/usr/local/etc/qubes/u2f-debug-enable',
+]
 
 async def mux(apdu, stream=None, devices=None, timeout=const.TIMEOUT, *,
         loop=None):
@@ -122,3 +129,17 @@ def enum_getter(enum_type):
             return getattr(enum_type, value)
 
     return _getter
+
+def setup_logging(debug=None):
+    '''Setup logging
+
+    The tools log to syslog (AUTH facility).
+    '''
+    logging.basicConfig(format='%(name)s %(message)s',
+        handlers=[logging.handlers.SysLogHandler(address='/dev/log',
+            facility=logging.handlers.SysLogHandler.LOG_AUTH)])
+
+    if debug is None:
+        debug = any(pathlib.Path(path).exists() for path in DEBUG_ENABLE_PATHS)
+    if debug:
+        logging.root.setLevel(logging.NOTSET)

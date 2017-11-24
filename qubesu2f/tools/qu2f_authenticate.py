@@ -38,13 +38,8 @@ parser.add_argument('key_handle_hash', metavar='QREXEC_SERVICE_ARGUMENT',
 def main(args=None, mux=tools.mux):
     '''Main routine of ``u2f.Register`` qrexec call'''
 
-    # uncomment for debugging
-#   logging.basicConfig(level=logging.NOTSET,
-#       format='%(name)s %(message)s',
-#       handlers=[logging.handlers.SysLogHandler(address='/dev/log',
-#           facility=logging.handlers.SysLogHandler.LOG_LOCAL2)])
-
     args = parser.parse_args(args)
+    tools.setup_logging()
 
     with proto.apdu_error_responder():
         apdu = proto.CommandAPDUAuthenticate.from_stream(
