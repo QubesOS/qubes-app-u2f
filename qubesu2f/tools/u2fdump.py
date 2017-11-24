@@ -32,6 +32,7 @@ import ctypes
 import datetime
 import fcntl
 import signal
+import sys
 
 from .. import const
 from .. import proto
@@ -176,15 +177,6 @@ class USBMon:
     def __aiter__(self):
         return self
 
-    def cancel(self):
-        while True:
-            try:
-                self.queue.get_nowait()
-                self.queue.task_done()
-            except asyncio.QueueEmpty:
-                break
-        self.queue = None
-
     async def __anext__(self):
         if self.queue is None:
             raise StopAsyncIteration()
@@ -195,7 +187,14 @@ class USBMon:
 
         except asyncio.CancelledError:
             self.loop.remove_reader(self.fd)
-            self.cancel()
+            while True:
+                try:
+                    self.queue.get_nowait()
+                    self.queue.task_done()
+                except asyncio.QueueEmpty:
+                    break
+            self.queue = None
+
             raise StopAsyncIteration()
 
         return packet
@@ -220,16 +219,13 @@ class USBMon:
 
 async def u2fmon(bus=0, device=-1):
     '''The actual U2F monitor. Print one U2FHID packet per line.'''
-    try:
-        with open(USBMONPATH.format(bus=bus), 'rb', buffering=0) as fd:
-            async for packet in USBMon(fd):
-                if device >= 0 and packet.devnum != device:
-                    continue
-                if not packet.length == packet.len_cap == const.HID_FRAME_SIZE:
-                    continue
-                print(packet)
-    except asyncio.CancelledError:
-        return
+    with open(USBMONPATH.format(bus=bus), 'rb', buffering=0) as fd:
+        async for packet in USBMon(fd):
+            if device >= 0 and packet.devnum != device:
+                continue
+            if not packet.length == packet.len_cap == const.HID_FRAME_SIZE:
+                continue
+            print(packet)
 
 
 def sighandler(signame, fut):
