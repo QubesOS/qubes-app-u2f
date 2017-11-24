@@ -312,6 +312,11 @@ class ResponseAPDURegister(ResponseAPDU):
         response_data = untrusted_response_data
         return response_data
 
+    @property
+    def qrexec_arg(self):
+        '''A qrexec argument for key_handle of this APDU'''
+        return qrexec_arg(self.key_handle)
+
     def hexdump_response_data(self):
         return util.hexlify_with_parition(self.response_data,
             1, const.P256_POINT_SIZE, 1, self._key_handle_len, self._x509_len)
@@ -613,11 +618,6 @@ class CommandAPDUAuthenticate(CommandAPDU):
         offset = const.U2F_NONCE_SIZE + const.U2F_APPID_SIZE + 1
         self.key_handle = self.request_data[offset:]
 
-    def get_argument_for_key(self):
-        '''Argument for qrexec call to identify the key'''
-        # use first 128 bits of SHA-256, or 32 hexadecimal digits
-        return hashlib.sha256(self.key_handle).hexdigest()[:32]
-
     def verify_p1(self, *, untrusted_p1):
         # this raises ValueError if untrusted_p1 is not one of the enum values
         p1 = const.U2F_AUTH(untrusted_p1)
@@ -630,6 +630,11 @@ class CommandAPDUAuthenticate(CommandAPDU):
         assert len(untrusted_request_data) == kh_offset + 1 + kh_len
         request_data = untrusted_request_data
         return request_data
+
+    @property
+    def qrexec_arg(self):
+        '''A qrexec argument for key_handle of this APDU'''
+        return qrexec_arg(self.key_handle)
 
     def hexdump_request_data(self):
         return util.hexlify_with_parition(self.request_data,
@@ -746,7 +751,7 @@ def get_der_length(*, untrusted_der_data):
     if untrusted_l == 0x81:  # length in one following octet
         return untrusted_der_data[2] + 3
 
-    elif untrusted_l == 0x82:  # length in two following octets
+    if untrusted_l == 0x82:  # length in two following octets
         return util.u16n_read(untrusted_der_data, 2) + 4
 
     # longer than 65535 octets, or not DER at all
@@ -768,3 +773,8 @@ def apdu_error_responder(stream=sys.stdout.buffer, exit_on_error=True):
 
         if exit_on_error:
             sys.exit(1)
+
+def qrexec_arg(key_handle):
+    '''Argument for qrexec call to identify the key'''
+    # use first 128 bits of SHA-256, or 32 hexadecimal digits
+    return hashlib.sha256(key_handle).hexdigest()[:32]

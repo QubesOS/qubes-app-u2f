@@ -51,7 +51,7 @@ def main(args=None, mux=tools.mux):
             sys.stdin.buffer)
 
     if (args.key_handle_hash is not None
-    and args.key_handle_hash != apdu.get_argument_for_key()):
+    and args.key_handle_hash != apdu.qrexec_arg):
         return 1
 
     asyncio.get_event_loop().run_until_complete(mux(apdu))

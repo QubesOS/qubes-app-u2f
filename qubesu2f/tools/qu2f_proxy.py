@@ -51,6 +51,9 @@ class U2FHIDQrexecDevice(hidemu.U2FHIDDevice):
         :param qubesu2f.proto.CommandAPDU capdu: command APDU
         :param str rpcname: name of the qrexec call
         '''
+
+        self.log.getChild('qrexec').debug(
+            'qrexec_transaction(capdu, rpcname=%r)', rpcname)
         # TODO timeout? not really needed, browser will time out itself
         qrexec_client = await asyncio.create_subprocess_exec(
             self.qrexec_client, self.vmname, rpcname,
@@ -72,12 +75,22 @@ class U2FHIDQrexecDevice(hidemu.U2FHIDDevice):
 
     async def handle_u2f_register(self, apdu):
         self.log.getChild('u2f').debug('handle_u2f_register()')
-        return await self.qrexec_transaction(apdu, rpcname='u2f.Register')
+        rapdu = await self.qrexec_transaction(apdu, rpcname='u2f.Register')
+        try:
+            rapdu.raise_for_sw()
+        except proto.APDUError:
+            pass
+        else:
+            self.log.getChild('qrexec').warning(
+                'successfully registered; u2f.Authenticate+%s',
+                rapdu.qrexec_arg)
+
+        return rapdu
 
     async def handle_u2f_authenticate(self, apdu):
         self.log.getChild('u2f').debug('handle_u2f_authenticate()')
         return await self.qrexec_transaction(apdu,
-            rpcname='u2f.Authenticate+{}'.format(apdu.get_argument_for_key()))
+            rpcname='u2f.Authenticate+{}'.format(apdu.qrexec_arg))
 
     async def handle_u2f_version(self, apdu):
         self.log.getChild('u2f').debug('handle_u2f_version()')
