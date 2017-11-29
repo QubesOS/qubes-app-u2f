@@ -21,10 +21,9 @@
 '''Qrexec call: u2f.Register'''
 
 import asyncio
-import logging  # pylint: disable=unused-import
-import logging.handlers  # pylint: disable=unused-import
 import sys
 
+from .. import const
 from .. import proto
 from .. import tools
 
@@ -32,12 +31,16 @@ def main():
     '''Main routine of ``u2f.Register`` qrexec call'''
 
     tools.setup_logging()
+    loop = asyncio.get_event_loop()
 
     with proto.apdu_error_responder():
-        apdu = proto.CommandAPDURegister.from_stream(
-            sys.stdin.buffer)
+        apdu = proto.CommandAPDURegister.from_stream(sys.stdin.buffer)
 
-    asyncio.get_event_loop().run_until_complete(tools.mux(apdu))
+    rapdu = loop.run_until_complete(tools.mux(apdu))
+
+    if rapdu.sw == const.U2F_SW.NO_ERROR:
+        loop.run_until_complete(tools.qrexec_register_argument(
+            'u2f.Authenticate', rapdu.qrexec_arg))
 
 if __name__ == '__main__':
     sys.exit(main())

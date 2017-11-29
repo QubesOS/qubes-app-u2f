@@ -24,6 +24,8 @@ import asyncio
 import enum
 import itertools
 import logging
+import logging.handlers
+import os
 import pathlib
 import sys
 
@@ -64,6 +66,8 @@ async def mux(apdu, stream=None, devices=None, timeout=const.TIMEOUT, *,
     # pylint: disable=no-member
     stream.write(bytes(response))
     stream.close()
+
+    return response
 
 async def _mux(*, apdu, devices, timeout, loop):
     log = logging.getLogger('mux')
@@ -150,3 +154,25 @@ def setup_logging(debug=None):
         debug = any(pathlib.Path(path).exists() for path in DEBUG_ENABLE_PATHS)
     if debug:
         logging.root.setLevel(logging.NOTSET)
+
+async def qrexec_register_argument(rpcname, argument, frontend=None):
+    if frontend is None:
+        frontend = os.environ['QREXEC_REMOTE_DOMAIN']
+
+    logging.info(
+        'attempting to register qrexec rpcname %s argument %s frontend %s',
+        rpcname, argument, frontend)
+
+    qrexec_client = await asyncio.create_subprocess_exec(
+        const.QREXEC_CLIENT, frontend,
+        'policy.RegisterArgument+{}'.format(rpcname),
+        stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE)
+    stdout, stderr = await qrexec_client.communicate(argument.encode('ascii'))
+
+    if qrexec_client.returncode:
+        logging.warning(
+            'policy argument registration failed for'
+            ' rpcname %s argument %s frontend %s; ignoring',
+            rpcname, argument, frontend)
+        logging.debug('stdout %r stderr %r', stdout, stderr)
