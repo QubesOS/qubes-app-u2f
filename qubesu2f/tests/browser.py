@@ -22,12 +22,14 @@
 
 import os
 import pathlib
+import shutil
 import unittest
 
 import pkg_resources
 import selenium.webdriver
 import selenium.common.exceptions
 from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox import firefox_binary
 from selenium.webdriver.support import expected_conditions, ui
 
 from .. import __author__
@@ -73,7 +75,19 @@ class TC_00_Browser(unittest.TestCase):
             finally:
                 driver.quit()
 
-    def get_firefox_driver(self):
+    # XXX Be aware of Selenium version:
+    # - Selenium from distro (2.53.5) will pass on Firefox < 57
+    #   and fail on Firefox >= 57 because of weird exception in selenium itself.
+    # - Selenium from PyPI (3.7.0 as of this writing) will pass on Firefox >= 57
+    #   and fail on Firefox < 57 for unknown reason.
+    #
+    # To add complication, both Selenium 3 and Firefox >= 57 need geckodriver:
+    # Selenium 3 dropped support for firefoxdriver and Selenium's old extension
+    # does not work with Firefox Quantum anymore. Geckodriver is unpackaged but
+    # available from https://github.com/mozilla/geckodriver/releases. It needs
+    # to be unpacked to a directory in $PATH.
+
+    def get_driver_firefox_esr(self):
         profile = selenium.webdriver.FirefoxProfile()
         profile.add_extension(pkg_resources.resource_filename(__package__,
             'u2f_support_add_on-1.0.1-fx-linux.xpi'))
@@ -87,14 +101,30 @@ class TC_00_Browser(unittest.TestCase):
 
         return selenium.webdriver.Firefox(firefox_profile=profile)
 
+    def get_driver_firefox_quantum(self):
+        profile = selenium.webdriver.FirefoxProfile()
+        profile.set_preference('general.useragent.override', TEST_USERAGENT)
+        profile.set_preference('security.webauth.u2f', True)
+
+        return selenium.webdriver.Firefox(
+            firefox_profile=profile,
+            firefox_binary=firefox_binary.FirefoxBinary('/opt/firefox/firefox'))
+
     @staticmethod
-    def get_chrome_driver():
+    def get_driver_chrome():
+        # TODO User-Agent
         return selenium.webdriver.Chrome()
 
 
-    def test_001_firefox(self):
-        self.do_selenium_test(self.get_firefox_driver)
+    def test_001_firefox_esr(self):
+        self.do_selenium_test(self.get_driver_firefox_esr)
+
+    def test_002_firefox_quantum(self):
+        if shutil.which('geckodriver') is None:
+            self.skipTest( 'please install geckodriver somewhere in $PATH')
+
+        self.do_selenium_test(self.get_driver_firefox_quantum)
 
     @unittest.skip('net::ERR_BLOCKED_BY_CLIENT')
-    def test_002_chrome(self):
-        self.do_selenium_test(self.get_chrome_driver)
+    def test_101_chrome(self):
+        self.do_selenium_test(self.get_driver_chrome)
