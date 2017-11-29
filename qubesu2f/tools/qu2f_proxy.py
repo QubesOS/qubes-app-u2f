@@ -61,7 +61,15 @@ class U2FHIDQrexecDevice(hidemu.U2FHIDDevice):
                 stderr=asyncio.subprocess.PIPE)
         stdout, stderr = await qrexec_client.communicate(bytes(capdu))
 
-        if qrexec_client.returncode != 0:
+        if qrexec_client.returncode == 126:
+            # qrexec was denied by policy; return CONDITIONS_NOT_SATISFIED and
+            # let the browser time out
+            self.log.getChild('qrexec').warning('qrexec call was denied: '
+                'vmname %s rpcname %s returncode %d',
+                self.vmname, rpcname, qrexec_client.returncode)
+            raise proto.APDUConditionsNotSatisfiedError()
+
+        if not stdout or qrexec_client.returncode != 0:
             self.log.getChild('qrexec').warning(
                 'qrexec_client.returncode=%r', qrexec_client.returncode)
             self.log.getChild('qrexec').debug(

@@ -30,6 +30,7 @@ import sys
 import u2flib_host.u2f  # pylint: disable=import-error
 
 from .. import const
+from .. import proto
 from .. import util
 
 # touch any of those to increase logging verbosity
@@ -70,6 +71,12 @@ async def _mux(*, apdu, devices, timeout, loop):
     pending = {loop.run_in_executor(None, _mux_device, device, apdu)
         for device in devices}
     log.debug('pending=%r', pending)
+
+    if not pending:
+        # no device plugged -- send a response as if the device wasn't touched,
+        # but log a fat message, so there is a chance to debug it...
+        log.warning('no device, sending fake CONDITIONS_NOT_SATISFIED')
+        return proto.APDUConditionsNotSatisfiedError()
 
     response = None
     while pending:

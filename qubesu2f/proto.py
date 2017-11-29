@@ -772,7 +772,7 @@ def apdu_error_responder(stream=sys.stdout.buffer, exit_on_error=True):
         stream.close()
 
         if exit_on_error:
-            sys.exit(1)
+            sys.exit(0)
 
 def qrexec_arg(key_handle):
     '''Argument for qrexec call to identify the key'''
