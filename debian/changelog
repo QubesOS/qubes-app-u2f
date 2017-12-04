@@ -1,3 +1,22 @@
+qubes-u2f (1.2.0) unstable; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * Fix files permissions
+  * Pack U2FHIDInitResp (#11)
+
+  [ Wojtek Porczyk ]
+  * qubesu2f/proto: asserts for struct's size
+  * qubesu2f/hidemu: fix race condition aound U2FHIDChannel.execute()
+  * qubesu2f: improve logging
+  * qubesu2f/tools/u2fdump: fix SIGINT handling
+  * qubesu2f: log qrexec argument while registering
+  * qubesu2f/tools/u2fdump: misc & pylint fixes
+  * qubesu2f/tools: common logging setup
+  * qubesu2f: improve handling of irregular situations
+  * qubesu2f/tools/qu2f_register: use policy.RegisterArgument
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 04 Dec 2017 18:02:27 +0100
+
 qubes-u2f (1.1.1) unstable; urgency=medium
 
   * Use dummy service instead of DefaultInstance=
