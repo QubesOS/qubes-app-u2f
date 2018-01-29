@@ -8,21 +8,54 @@ This implements [FIDO U2F version 1.2][U2FRawMsgs] with [HID
 encapsulation][U2FHID]. See also non-normative [U2F Overview][U2FOverview] for
 introduction and U2F threat model.
 
-## Architecture diagram
+![Screenshot](Documentation/screenshot.png)
 
-![Architecture diagram](Documentation/architecture.svg)
+## HOWTO
 
-## Requirements
+### Requirements
 
-Debian 9 (stretch) or Fedora 25,
-Python 3.5,
-https://github.com/Yubico/python-u2flib-host.
+- Qubes R3.2 or later (R4.0 or later recommended)
+- For Debian template: Debian 9 (stretch) or later
+- For Fedora template: Fedora 25 or later
+- Python 3.5
+- https://github.com/Yubico/python-u2flib-host
+- For building manpages: `python3-sphinx`
 
-For building manpages: `python3-sphinx`.
+### Installation
 
-## Incompatibilities
+The guide assumes there is `sys-usb` qube which holds the USB Host PCI device
+and the qube which holds the browser (or other U2F client) is named `work`.
 
-WINK does not work, even if the underlying harware token does support it.
+1. In `debian-9`:
+```
+sudo apt install qubes-u2f
+```
+1. In `fedora-25`:
+```
+sudo dnf install qubes-u2f
+```
+1. In `dom0`:
+```
+qubes-dom0-update qubes-u2f-dom0
+qvm-service --enable work qubes-u2f-proxy
+```
+
+### Advanced: per-qube access enforced by policy
+
+*This requires Qubes R4.0 or later (as of this writing, available as release
+candidate).*
+
+In `dom0`, create a file
+`/etc/qubes-rpc/policy/policy.RegisterArgument+u2f.Authenticate` with the
+following content:
+
+```
+sys-usb $anyvm allow,target=dom0
+```
+
+Then remove `/etc/qubes-rpc/policy/u2f.Authenticate` and register your token.
+After doing this, any qube will have access only to tokens enrolled using that
+particular qube. Also, any previously registered token will not work.
 
 ## Threat model
 
@@ -42,6 +75,14 @@ them in the first place. That access should not be possible.
 It is explicitly not a&nbsp;goal to ensure any security properties already
 provided by the U2F protocol itself. It is also not a&nbsp;goal to prevent
 cooperative channels between the browser and the token.
+
+## Architecture diagram
+
+![Architecture diagram](Documentation/architecture.svg)
+
+## Incompatibilities
+
+WINK does not work, even if the underlying harware token does support it.
 
 [U2FOverview]: https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-overview-v1.2-ps-20170411.html
 [U2FRawMsgs]: https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-raw-message-formats-v1.2-ps-20170411.html
