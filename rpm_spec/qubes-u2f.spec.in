@@ -9,13 +9,13 @@ URL:		https://github.com/QubesOS/qubes-app-u2f
 Source0:    %{name}-%{version}.tar.gz
 
 BuildArch:  noarch
-BuildRequires:	python3-devel
-BuildRequires:	python3-sphinx
+BuildRequires:	python%{python3_pkgversion}-devel
+BuildRequires:	python%{python3_pkgversion}-sphinx
 %{?systemd_requires}
 BuildRequires:  systemd
 
-Requires:	python3
-Requires:	python3-u2flib-host
+Requires:	python%{python3_pkgversion}
+Requires:	python%{python3_pkgversion}-u2flib-host
 
 %description
 Qubes OS U2F proxy
