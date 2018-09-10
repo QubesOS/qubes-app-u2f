@@ -1,3 +1,14 @@
+qubes-u2f (1.2.1) unstable; urgency=medium
+
+  [ Wojtek Porczyk ]
+  * README: HOWTO
+
+  [ Marek Marczykowski-Górecki ]
+  * rpm: update packaging for mockbuild
+  * travis: initial version
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 10 Sep 2018 21:02:28 +0200
+
 qubes-u2f (1.2.0) unstable; urgency=medium
 
   [ Marek Marczykowski-Górecki ]
