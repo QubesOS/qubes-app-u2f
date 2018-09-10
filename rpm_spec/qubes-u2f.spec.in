@@ -1,14 +1,12 @@
-%{!?version: %define version %(cat version)}
-%define _builddir %(pwd)
-
 Name:		qubes-u2f
-Version:	%{version}
+Version:	@VERSION@
 Release:	1%{?dist}
 Summary:	Qubes OS U2F proxy
 
 Group:		Qubes
 License:	GPL2+
 URL:		https://github.com/QubesOS/qubes-app-u2f
+Source0:    %{name}-%{version}.tar.gz
 
 BuildArch:  noarch
 BuildRequires:	python3-devel
@@ -23,9 +21,7 @@ Requires:	python3-u2flib-host
 Qubes OS U2F proxy
 
 %prep
-rm -f %{name}-%{version}
-ln -sf . %{name}-%{version}
-%setup -T -D
+%setup -q
 
 %build
 make PYTHON=%{__python3}
