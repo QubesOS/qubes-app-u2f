@@ -3,6 +3,7 @@
 import os
 import pathlib
 import setuptools
+import setuptools.command.install
 
 from qubesu2f import __version__
 assert __version__ == pathlib.Path('version').read_text().strip()
@@ -14,7 +15,26 @@ def get_console_scripts(path):
     for p in path.glob('*.py'):
         if not p.is_file() or p.stem == '__init__':
             continue
-        yield '{} = {}.{}:main'.format(p.stem.replace('_', '-'), pkg, p.stem)
+        yield p.stem.replace('_', '-'), '{}.{}'.format(pkg, p.stem)
+
+# create simple scripts that run much faster than "console entry points"
+class CustomInstall(setuptools.command.install.install):
+    def run(self):
+        bin = os.path.join(self.root, "usr/bin")
+        os.makedirs(bin, exist_ok=True)
+        for file, pkg in get_console_scripts('qubesu2f/tools'):
+           path = os.path.join(bin, file)
+           with open(path, "w") as f:
+               f.write(
+"""#!/usr/bin/python3
+from {} import main
+import sys
+if __name__ == '__main__':
+        sys.exit(main())
+""".format(pkg))
+
+           os.chmod(path, 0o755)
+        setuptools.command.install.install.run(self)
 
 if __name__ == '__main__':
     setuptools.setup(
@@ -33,7 +53,7 @@ if __name__ == '__main__':
         package_data={
             'qubesu2f.tests': ['*.xpi'],
         },
-        entry_points={
-            'console_scripts': list(get_console_scripts('./qubesu2f/tools')),
+        cmdclass={
+            'install': CustomInstall,
         },
     )
