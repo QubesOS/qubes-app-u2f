@@ -4,6 +4,7 @@ PRESETDIR ?= /usr/lib/systemd/system-preset
 MANDIR ?= /usr/share/man
 QREXECDIR ?= /etc/qubes-rpc
 UDEVRULESDIR ?= /lib/udev/rules.d
+POSTINSTALLDIR ?= /etc/qubes/post-install.d
 
 .PHONY: all
 all:
@@ -21,6 +22,8 @@ install:
 	install -t $(DESTDIR)$(QREXECDIR) qubes-rpc/*
 	install -d $(DESTDIR)$(UDEVRULESDIR)
 	install -m 0644 -t $(DESTDIR)$(UDEVRULESDIR) udev/*
+	install -d $(DESTDIR)$(POSTINSTALLDIR)
+	install -t $(DESTDIR)$(POSTINSTALLDIR) post-install.d/*.sh
 
 .PHONY: install
 install-policy:

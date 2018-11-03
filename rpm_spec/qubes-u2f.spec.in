@@ -55,6 +55,7 @@ make -C Documentation install \
 %{_bindir}/u2fdump
 %{_sysconfdir}/qubes-rpc/u2f.Register
 %{_sysconfdir}/qubes-rpc/u2f.Authenticate
+%{_sysconfdir}/qubes/post-install.d/30-qubes-u2f.sh
 
 %{_presetdir}/75-qubes-u2fproxy.preset
 %{_unitdir}/qubes-u2fproxy@.service
