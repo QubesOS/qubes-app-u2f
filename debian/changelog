@@ -1,3 +1,13 @@
+qubes-u2f (1.2.3) unstable; urgency=medium
+
+  * rpm: make the package centos-friendly
+  * exclude build on centos7
+  * Use simplified script for /usr/bin
+  * add shebang to /etc/qubes-rpc/* scripts
+  * Advertise qubes-u2f-proxy service
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 03 Nov 2018 04:33:55 +0100
+
 qubes-u2f (1.2.2) unstable; urgency=medium
 
   * 
