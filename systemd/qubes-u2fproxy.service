@@ -1,5 +1,5 @@
 [Unit]
-Descripts=Default instance of qubes-u2f-proxy
+Description=Default instance of qubes-u2f-proxy
 
 [Service]
 Type=oneshot
