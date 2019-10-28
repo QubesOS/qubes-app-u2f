@@ -1,3 +1,14 @@
+qubes-u2f (1.2.4) unstable; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * Fix typo in qubes-u2fproxy.service file
+  * travis: switch to xenial, update distributions
+
+  [ Frédéric Pierret (fepitre) ]
+  * travis: switch to bionic
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 28 Oct 2019 04:25:12 +0100
+
 qubes-u2f (1.2.3) unstable; urgency=medium
 
   * rpm: make the package centos-friendly
