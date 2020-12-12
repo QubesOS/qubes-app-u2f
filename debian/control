@@ -3,10 +3,12 @@ Section: utils
 Priority: optional
 Maintainer: Wojtek Porczyk <woju@invisiblethingslab.com>
 Build-Depends:
- python3-sphinx,
- debhelper (>= 9), dh-python, dh-systemd, python3-all, python3-setuptools
-X-Python3-Version: >= 3.5
-Standards-Version: 3.9.5
+ debhelper,
+ python3-all,
+ python3-setuptools,
+ python3-sphinx
+X-Python3-Version: >= 3.7
+Standards-Version: 4.4.0.1
 Homepage: https://github.com/QubesOS/qubes-app-u2f.git
 Vcs-Git: https://github.com/QubesOS/qubes-app-u2f.git
 Vcs-Browser: https://github.com/QubesOS/qubes-app-u2f.git
