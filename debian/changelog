@@ -1,3 +1,18 @@
+qubes-u2f (1.2.6) unstable; urgency=medium
+
+  [ Frédéric Pierret (fepitre) ]
+  * travis: switch to dom0 Fedora 31
+  * Update travis
+  * Add .gitlab-ci.yml
+  * debian: update control && compat
+  * debian: update python deps
+  * Fix build with python3 for CentOS
+
+  [ Marek Marczykowski-Górecki ]
+  * Exclude CentOS build
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 25 Jan 2021 01:06:43 +0100
+
 qubes-u2f (1.2.5) unstable; urgency=medium
 
   * 
