@@ -31,11 +31,13 @@ make -C Documentation man SPHINXBUILD=sphinx-build-%{python3_version}
 make install \
     UNITDIR=%{_unitdir} \
     UDEVRULESDIR=%{_udevrulesdir} \
-    DESTDIR=$RPM_BUILD_ROOT
+    DESTDIR=$RPM_BUILD_ROOT \
+    PYTHON=%{__python3}
 
 make -C Documentation install \
 	MANDIR=%{_mandir} \
-    DESTDIR=$RPM_BUILD_ROOT
+    DESTDIR=$RPM_BUILD_ROOT \
+    PYTHON=%{__python3}
 
 %post
 %systemd_post qubes-u2fproxy.service
