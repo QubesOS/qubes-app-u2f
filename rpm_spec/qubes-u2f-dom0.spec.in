@@ -10,6 +10,7 @@ Source0:    qubes-u2f-%{version}.tar.gz
 
 BuildArch:  noarch
 
+BuildRequires:  make
 Requires:   qubes-core-dom0
 
 %description

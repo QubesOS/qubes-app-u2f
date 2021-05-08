@@ -12,6 +12,7 @@ BuildArch:  noarch
 BuildRequires:	python%{python3_pkgversion}-devel
 BuildRequires:	python%{python3_pkgversion}-sphinx
 %{?systemd_requires}
+BuildRequires:  make
 BuildRequires:  systemd
 
 Requires:	python%{python3_pkgversion}
