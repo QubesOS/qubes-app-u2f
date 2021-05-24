@@ -1,3 +1,10 @@
+qubes-u2f (1.2.9) unstable; urgency=medium
+
+  [ Frédéric Pierret (fepitre) ]
+  * spec: add BR make
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 24 May 2021 04:22:49 +0200
+
 qubes-u2f (1.2.8) unstable; urgency=medium
 
   * 

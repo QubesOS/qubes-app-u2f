@@ -5,5 +5,5 @@ of U2F HID device as frontend and operating one from backend.
 '''
 
 # keep this parseable by distutils.version.StrictVersion
-__version__ = '1.2.8'
+__version__ = '1.2.9'
 __author__ = 'Wojtek Porczyk <woju@invisiblethingslab.com>'
