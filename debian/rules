@@ -24,6 +24,10 @@ override_dh_install:
 		PRESETDIR=/lib/systemd/system-preset
 	$(MAKE) -C Documentation install DESTDIR=$(CURDIR)/debian/qubes-u2f
 
+override_dh_clean:
+	dh_clean -O--buildsystem=pybuild
+	make clean
+
 # debmake generated override targets
 # This is example for Cmake (See http://bugs.debian.org/641051 )
 #override_dh_auto_configure:
