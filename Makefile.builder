@@ -1,5 +1,5 @@
 ifneq ($(PACKAGE_SET),dom0)
-ifneq ($(DISTRIBUTION),centos)
+ifeq ($(filter $(DIST), centos7 centos8 centos-stream8),)
 RPM_SPEC_FILES := rpm_spec/qubes-u2f.spec
 endif
 ifneq ($(DIST),jessie)
