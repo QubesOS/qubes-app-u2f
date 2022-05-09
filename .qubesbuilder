@@ -1,10 +1,10 @@
 host:
   rpm:
-    spec:
+    build:
     - rpm_spec/qubes-u2f-dom0.spec
 vm:
   rpm:
-    spec:
+    build:
     - rpm_spec/qubes-u2f.spec
   deb:
     build:
