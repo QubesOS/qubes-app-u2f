@@ -50,9 +50,9 @@ following content:
 sys-usb $anyvm allow,target=dom0
 ```
 
-Then remove `/etc/qubes-rpc/policy/u2f.Authenticate` and register your token.
-After doing this, any qube will have access only to tokens enrolled using that
-particular qube. Also, any previously registered token will not work.
+Then truncate `/etc/qubes-rpc/policy/u2f.Authenticate` to 0 bytes and register
+your token.  After doing this, any qube will have access only to tokens enrolled
+using that particular qube. Also, any previously registered token will not work.
 
 ## Threat model
 
