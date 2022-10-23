@@ -1,4 +1,4 @@
-qubes-app-u2f
+qubes-app-ctap
 =============
 
 .. toctree::

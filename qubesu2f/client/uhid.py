@@ -18,7 +18,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-'''Pure Python API to UHID virtual device'''
+"""Pure Python API to UHID virtual device"""
 
 import asyncio
 import ctypes
@@ -26,8 +26,9 @@ import distutils.version
 import enum
 import errno
 import logging
+from typing import Optional, BinaryIO
 
-from . import util
+from qubesu2f import util
 
 # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
 
@@ -86,9 +87,9 @@ class UHID(enum.IntEnum):
 
 @enum.unique
 class UHID_DEV_FLAGS(enum.IntEnum):
-    NUMBERED_FEATURE_REPORTS = (1 << 0)
-    NUMBERED_OUTPUT_REPORTS  = (1 << 1)
-    NUMBERED_INPUT_REPORTS   = (1 << 2)
+    NUMBERED_FEATURE_REPORTS = 1 << 0
+    NUMBERED_OUTPUT_REPORTS  = 1 << 1
+    NUMBERED_INPUT_REPORTS   = 1 << 2
 
 @enum.unique
 class UHID_REPORT(enum.IntEnum):
@@ -295,19 +296,20 @@ class uhid_event(ctypes.Structure):
                 if attr.size is not None and attr.size.startswith('_'):
                     fields.remove(attr.size)
 
+        # pylint: disable=consider-using-f-string
         return '{}(type={!s}{})'.format(type(self).__name__, event_type,
             ''.join(', u.{}.{}={}'.format(uattr, field, getattr(union, field))
                 for field in fields))
 
 # pylint: enable=invalid-name,missing-docstring,too-few-public-methods
 
-class UHIDDevice(object):
-    '''An abstract emulated device.
+class UHIDDevice:
+    """An abstract emulated device.
 
     You should inherit from this class and override at least
     :py:meth:`handle_uhid_output`, :py:meth:`handle_uhid_get_report` and
     :py:meth:`handle_uhid_set_report`.
-    '''
+    """
     # pylint: disable=too-many-instance-attributes
 
     name = ''
@@ -317,7 +319,7 @@ class UHIDDevice(object):
     version = 0
     phys = b'\0'
     country = 0
-    rdesc = b'\0'  # TODO craft some null descriptor
+    rdesc = b'\0'
 
     # Hidapi's hidraw backend assumes the device is either on BUS_USB or
     # BUS_BLUETOOTH. If it is BUS_USB, some additional introspection on /sys is
@@ -360,7 +362,7 @@ class UHIDDevice(object):
         self._normalize_version()
 
         self.loop = loop or asyncio.get_event_loop()
-        self.fd = None
+        self.fd: Optional[BinaryIO] = None
 
         self.is_started = asyncio.Event()
         self.is_open = asyncio.Event()
@@ -383,7 +385,8 @@ class UHIDDevice(object):
         self.version = (major << 24) + (minor << 16) + (subminor << 8) + pre
 
     async def open(self):
-        '''Send CREATE2 event.'''
+        """Send CREATE2 event."""
+        # pylint: disable=consider-using-with
 
         self.log.getChild('uhid').debug('open()')
         self.fd = open('/dev/uhid', 'r+b', buffering=0)
@@ -400,25 +403,26 @@ class UHIDDevice(object):
         self.loop.add_reader(self.fd, self._read_req)
 
     async def close(self):
-        '''Send DESTROY event.'''
-
+        """Send DESTROY event."""
+        assert self.fd is not None  # open file first!
         self.log.debug('close()')
         await self.write_uhid_req(UHID.DESTROY)
-        self.loop.remove_reader(self.fd)
+        self.loop.remove_reader(self.fd)  # type: ignore
         self.fd.close()
 
     async def write_uhid_req(self, event, **kwargs):
-        '''Send an event to uhid device
+        """Send an event to uhid device
 
         :param event: either a structure or a value from :py:class:`UHID`.
 
         *kwargs* will all be :py:func:`setattr` on the structure.
-        '''
-
+        """
+        assert self.fd is not None  # open file first!
         if not isinstance(event, uhid_event):
             event = uhid_event(type=event)
 
         event_type = UHID(event.type)
+        # pylint: disable=consider-using-f-string
         self.log.getChild('uhid').debug(
             'write_uhid_req(event.type={!s}, *{})'.format(event_type,
                 ''.join(', {}={}'.format(k, util.maybe_hexlify(v))
@@ -445,11 +449,12 @@ class UHIDDevice(object):
     def _read_req(self):
         # there is .read(), which is definitely an IO operation, but this is
         # called from loop's reader, so this shouldn't block
-        buffer = self.fd.read(ctypes.sizeof(uhid_event))
-        event = uhid_event.from_buffer_copy(buffer)
+        assert self.fd is not None  # open file first!
+        buf = self.fd.read(ctypes.sizeof(uhid_event))
+        event = uhid_event.from_buffer_copy(buf)
         self.log.getChild('uhid').debug('_read_req() -> %r', event)
         handler = getattr(self,
-            'handle_hid_{}'.format(UHID(event.type).name.lower()))
+            f'handle_hid_{UHID(event.type).name.lower()}')
         return handler(event)
 
     # pylint: disable=missing-docstring
@@ -462,23 +467,19 @@ class UHIDDevice(object):
             self.dev_flags[flag] = bool(event.start.dev_flags & flag)
         self.is_started.set()
 
-    def handle_hid_stop(self, event):
-        # pylint: disable=unused-argument
+    def handle_hid_stop(self, _event):
         self.log.getChild('uhid').debug('handle_hid_stop()')
         self.is_started.clear()
 
-    def handle_hid_open(self, event):
-        # pylint: disable=unused-argument
+    def handle_hid_open(self, _event):
         self.log.getChild('uhid').debug('handle_hid_open()')
         self.is_open.set()
 
-    def handle_hid_close(self, event):
-        # pylint: disable=unused-argument
+    def handle_hid_close(self, _event):
         self.log.getChild('uhid').debug('handle_hid_close()')
         self.is_open.clear()
 
-    def handle_hid_output(self, event):
-        # pylint: disable=unused-argument
+    def handle_hid_output(self, _event):
         self.log.getChild('uhid').debug('handle_hid_output()')
         self.log.getChild('uhid').warning('WARNING: unhandled OUTPUT event')
 

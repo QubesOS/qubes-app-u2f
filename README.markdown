@@ -1,12 +1,10 @@
-# Qubes OS U2F proxy
+# Qubes OS CTAP proxy
 
-This tool is intended to securely forward U2F challenge-response authentication
-between Web browser and U2F HID token without exposing the browser and USB stack
-to one another.
+This tool is intended to securely forward CTAP challenge-response authentication
+between Web browser and CTAP HID token without exposing the browser and 
+USB stack to one another.
 
-This implements [FIDO U2F version 1.2][U2FRawMsgs] with [HID
-encapsulation][U2FHID]. See also non-normative [U2F Overview][U2FOverview] for
-introduction and U2F threat model.
+This implements [FIDO 2][FIDO2] with [HID encapsulation][CTAPHID].
 
 ![Screenshot](Documentation/screenshot.png)
 
@@ -15,18 +13,18 @@ introduction and U2F threat model.
 ### Requirements
 
 - Qubes R4.1 or later
-- For Debian template: Debian 10 (stretch) or later
+- TODO: For Debian template: Debian 10 (stretch) or later
 - For Fedora template: Fedora 35 or later
-- Python 3.5 or later
+- Python 3.7 or later
 - https://github.com/Yubico/python-u2flib-host
 - For building manpages: `python3-sphinx`
 
 ### Installation
 
 The guide assumes there is `sys-usb` qube which holds the USB Host PCI device
-and the qube which holds the browser (or other U2F client) is named `work`.
+and the qube which holds the browser (or other CTAP client) is named `work`.
 
-1. In `debian-11`:
+1. In `debian-11` (TODO):
 ```
 sudo apt install qubes-u2f
 ```
@@ -43,15 +41,15 @@ qvm-service --enable work qubes-u2f-proxy
 ### Advanced: per-qube access enforced by policy
 
 In `dom0`, create a file
-`/etc/qubes-rpc/policy/policy.RegisterArgument+u2f.Authenticate` with the
+`/etc/qubes-rpc/policy/policy.RegisterArgument+ctap.GetAssertion` with the
 following content:
 
 ```
 sys-usb $anyvm allow,target=dom0
 ```
 
-Then truncate `/etc/qubes-rpc/policy/u2f.Authenticate` to 0 bytes and register
-your token.  After doing this, any qube will have access only to tokens enrolled
+Then truncate `/etc/qubes-rpc/policy/ctap.GetAssertion` to 0 bytes and register
+your token. After doing this, any qube will have access only to tokens enrolled
 using that particular qube. Also, any previously registered token will not work.
 
 ## Threat model
@@ -66,11 +64,11 @@ within the constraints of qrexec policy.
 The aim of the frontend site would be typically to get unlimited access to
 token, and possibly key materiel if the token is software-only. The aim of the
 backend would be to get access to any secrets held in frontend domain, and there
-certainly are some, since the user is deploying U2F authentication to protect
+certainly are some, since the user is deploying CTAP authentication to protect
 them in the first place. That access should not be possible.
 
 It is explicitly not a&nbsp;goal to ensure any security properties already
-provided by the U2F protocol itself. It is also not a&nbsp;goal to prevent
+provided by the CTAP protocol itself. It is also not a&nbsp;goal to prevent
 cooperative channels between the browser and the token.
 
 ## Architecture diagram
@@ -81,8 +79,7 @@ cooperative channels between the browser and the token.
 
 WINK does not work, even if the underlying harware token does support it.
 
-[U2FOverview]: https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-overview-v1.2-ps-20170411.html
-[U2FRawMsgs]: https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-raw-message-formats-v1.2-ps-20170411.html
-[U2FHID]: https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-hid-protocol-v1.2-ps-20170411.html
+[FIDO2]: https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-errata-20220621.html
+[CTAPHID]: https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-errata-20220621.html#transport-specific-bindings
 
 <!-- vim: set tw=80 : -->

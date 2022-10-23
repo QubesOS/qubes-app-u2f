@@ -1,6 +1,7 @@
 #
 # The Qubes OS Project, https://www.qubes-os.org/
 #
+# Copyright (C) 2023  Piotr Bartman <prbartman@invisiblethingslab.com>
 # Copyright (C) 2017  Wojtek Porczyk <woju@invisiblethingslab.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -18,36 +19,29 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-"""
-Constants for CTAP protocol.
-"""
-# pylint: disable=invalid-name,missing-docstring
+"""Common logging features for sys-usb entries."""
 
-import enum
+import logging
+import logging.handlers
+import pathlib
 
-TIMEOUT = 5
-
-HID_FRAME_SIZE = 64
-
-# This is 7609. See [CTAPHID 11.2.4] for where it came from.
-MAX_MSG_SIZE = HID_FRAME_SIZE - 7 + 0x80 * (HID_FRAME_SIZE - 5)
-
-# Register
-
-U2F_NONCE_SIZE = 32  # "challenge parameter"
-U2F_APPID_SIZE = 32  # "application parameter"
-
-MAX_KH_SIZE = 255
+# touch any of those to increase logging verbosity
+DEBUG_ENABLE_PATHS = [
+    '/etc/qubes/ctap-debug-enable',
+    '/usr/local/etc/qubes/ctap-debug-enable',
+]
 
 
-U2F_VERSION = 'U2F_V2'
+def setup_logging(debug=None):
+    """Setup logging
 
-CTAPHID_IF_VERSION = 2
+    The tools log to syslog (AUTH facility).
+    """
+    logging.basicConfig(format='%(name)s %(message)s',
+        handlers=[logging.handlers.SysLogHandler(address='/dev/log',
+            facility=logging.handlers.SysLogHandler.LOG_AUTH)])
 
-
-@enum.unique
-class CTAPHID_TYPE(enum.IntEnum):
-    INIT = 1
-    CONT = 0
-
-QREXEC_CLIENT = '/usr/bin/qrexec-client-vm'
+    if debug is None:
+        debug = any(pathlib.Path(path).exists() for path in DEBUG_ENABLE_PATHS)
+    if debug:
+        logging.root.setLevel(logging.NOTSET)

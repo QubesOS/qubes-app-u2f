@@ -1,7 +1,7 @@
 #
 # The Qubes OS Project, https://www.qubes-os.org/
 #
-# Copyright (C) 2017  Wojtek Porczyk <woju@invisiblethingslab.com>
+# Copyright (C) 2022 Piotr Bartman <prbartman@invisiblethingslab.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,29 +18,21 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-'''Qrexec call: u2f.Register'''
+"""Qrexec call: ctap2.Info"""
 
 import asyncio
 import sys
 
-from .. import const
-from .. import proto
-from .. import tools
+from qubesu2f import sys_usb
+from qubesu2f.sys_usb.mux import mux
+# pylint: disable=duplicate-code
 
 def main():
-    '''Main routine of ``u2f.Register`` qrexec call'''
+    """Main routine of ``ctap2.Info`` qrexec call"""
 
-    tools.setup_logging()
+    sys_usb.setup_logging()
     loop = asyncio.get_event_loop()
-
-    with proto.apdu_error_responder():
-        apdu = proto.CommandAPDURegister.from_stream(sys.stdin.buffer)
-
-    rapdu = loop.run_until_complete(tools.mux(apdu))
-
-    if rapdu.sw == const.U2F_SW.NO_ERROR:
-        loop.run_until_complete(tools.qrexec_register_argument(
-            'u2f.Authenticate', rapdu.qrexec_arg))
+    loop.run_until_complete(mux(sys.stdin.buffer.read()))
 
 if __name__ == '__main__':
     sys.exit(main())

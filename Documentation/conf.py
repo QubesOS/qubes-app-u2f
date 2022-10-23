@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Qubes U2F proxy documentation build configuration file, created by
+# Qubes CTAP proxy documentation build configuration file, created by
 # sphinx-quickstart on Sat Oct 14 16:25:18 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -53,8 +53,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Qubes U2F proxy'
-copyright = '2017, Invisible Things Lab'
+project = 'Qubes CTAP proxy'
+copyright = '2023, Invisible Things Lab'
 author = 'Invisible Things Lab'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -144,11 +144,11 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('manpages/qu2f-proxy', 'qu2f-proxy',
+    ('manpages/qctap-proxy', 'qctap-proxy',
         'Qubes U2F proxy daemon', [], 8),
-    ('manpages/qu2f-register', 'qu2f-register',
+    ('manpages/qctap-register', 'qctap-register',
         'Qubes U2F_REGISTER qrexec call', [], 1),
-    ('manpages/qu2f-authenticate', 'qu2f-authenticate',
+    ('manpages/qctap-authenticate', 'qctap-authenticate',
         'Qubes U2F_AUTHENTICATE qrexec call', [], 1),
 ]
 

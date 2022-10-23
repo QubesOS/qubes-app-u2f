@@ -18,10 +18,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-'''Tracer for U2FHID protocol with actual USB device.
+"""Tracer for CTAPHID protocol with actual USB device.
 
 This relies on usbmon packet capture, so it is not good for uhid emulation.
-'''
+"""
 
 # well, we're working with structs, so
 # pylint: disable=too-few-public-methods,too-many-instance-attributes
@@ -33,10 +33,11 @@ import datetime
 import fcntl
 import signal
 import sys
+from typing import Optional
 
-from .. import const
-from .. import proto
-from .. import util
+import qubesu2f.client.hid_data
+from qubesu2f import const
+from qubesu2f import util
 
 # https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/usb/usbmon.txt
 
@@ -133,7 +134,7 @@ MON_IOCX_GETX = _IOW(MON_IOC_MAGIC, 10, ctypes.sizeof(_USBMonGetArg))
 
 
 class USBMonPacket:
-    '''A packet yielded from the monitor.'''
+    """A packet yielded from the monitor."""
     def __init__(self, hdr, data):
         self.busnum = hdr.busnum
         self.devnum = hdr.devnum
@@ -147,7 +148,7 @@ class USBMonPacket:
         self.dir_in = bool(hdr.epnum & 0x80)
 
         if self.length == self.len_cap == const.HID_FRAME_SIZE:
-            self.data = proto.U2FHIDPacket.from_buffer(data)
+            self.data = qubesu2f.client.hid_data.CTAPHIDPacket.from_buffer(data)
         else:
             self.data = data.raw[:self.len_cap]
 
@@ -157,13 +158,12 @@ class USBMonPacket:
         except AttributeError:
             payload = util.hexlify(self.data)
 
-        return ('{:%S.%f} '
-                '{}:{:03d}:{} {} {}').format(
-            self.timestamp, self.busnum, self.devnum, self.epnum,
-            ('I' if self.dir_in else 'O'), payload)
+        return (f'{self.timestamp:%S.%f} '
+                f'{self.busnum}:{self.devnum:03d}:{self.epnum} '
+                f'{("I" if self.dir_in else "O")} {payload}')
 
 class USBMon:
-    '''Async iterator, which yields each packet as it is received.'''
+    """Async iterator, which yields each packet as it is received."""
     packet_class = USBMonPacket
 
     def __init__(self, fd, bufsize=const.HID_FRAME_SIZE, *, loop=None):
@@ -171,7 +171,7 @@ class USBMon:
         self.bufsize = bufsize
         self.loop = loop or asyncio.get_event_loop()
 
-        self.queue = asyncio.Queue(32)
+        self.queue: Optional[asyncio.Queue] = asyncio.Queue(32)
         self.loop.add_reader(self.fd, self._reader)
 
     def __aiter__(self):
@@ -186,6 +186,7 @@ class USBMon:
             self.queue.task_done()
 
         except asyncio.CancelledError:
+            # pylint: disable=raise-missing-from
             self.loop.remove_reader(self.fd)
             while True:
                 try:
@@ -212,13 +213,14 @@ class USBMon:
         fcntl.ioctl(self.fd, MON_IOCX_GETX, arg)
 
         try:
+            assert self.queue is not None
             self.queue.put_nowait(self.packet_class(hdr, data))
         except asyncio.QueueFull:
             sys.stderr.write('warning: queue full, dropping packet\n')
 
 
 async def u2fmon(bus=0, device=-1):
-    '''The actual U2F monitor. Print one U2FHID packet per line.'''
+    """The actual U2F monitor. Print one CTAPHID packet per line."""
     with open(USBMONPATH.format(bus=bus), 'rb', buffering=0) as fd:
         async for packet in USBMon(fd):
             if device >= 0 and packet.devnum != device:
@@ -230,7 +232,7 @@ async def u2fmon(bus=0, device=-1):
 
 def sighandler(signame, fut):
     # pylint: disable=missing-docstring
-    print('caught {}, exiting'.format(signame))
+    print(f'caught {signame}, exiting')
     fut.cancel()
 
 parser = argparse.ArgumentParser()

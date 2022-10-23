@@ -1,12 +1,12 @@
-.. program:: qu2f-proxy
+.. program:: qctap-proxy
 
-:program:`qu2f-proxy` -- U2F proxy daemon
+:program:`qctap-proxy` -- CTAP proxy daemon
 =========================================
 
 Synopsis
 --------
 
-:command:`qu2f-proxy`
+:command:`qctap-proxy`
 [--help]
 [--verbose]
 [--quiet]
@@ -135,13 +135,21 @@ values are sane.
 Qrexec calls
 ------------
 
-``u2f.Register``
-    This is the call used for the U2F_REGISTER call. It is handled by
-    :manpage:`qu2f-register(1)`.
+``ctap.MakeCredential``
+    This is the call used for the CTAP_MAKE_CREDENTIA call. It is handled by
+    :manpage:`qctap-make-credential(1)`.
 
-``u2f.Authenticate``
-    This is the call used for the U2F_AUTHENTICATE call. It is handled by
-    :manpage:`qu2f-authenticate(1)`.
+``ctap.GetAssertion``
+    This is the call used for the CTAP_GET_ASSERTION call. It is handled by
+    :manpage:`qctap-get-assetion(1)`.
+
+``ctap.ClientPin``
+    This is the call used for the CTAP_MAKE_CREDENTIA call. It is handled by
+    :manpage:`qctap-client-pin(1)`.
+
+``ctap.GetInfo``
+    This is the call used for the CTAP_GET_Info call. It is handled by
+    :manpage:`qctap-get-info(1)`.
 
 Author
 ------

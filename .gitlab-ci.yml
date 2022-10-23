@@ -11,3 +11,27 @@ include:
   project: QubesOS/qubes-continuous-integration
 - file: /r4.2/gitlab-vm.yml
   project: QubesOS/qubes-continuous-integration
+
+checks:tests:
+  stage: checks
+  variables:
+    PYTEST_ADDOPTS: "--color=yes"
+  before_script: &before-script
+    - "PATH=$PATH:$HOME/.local/bin"
+    - sudo dnf install -y python3-pytest python3-coverage
+    - pip3 install --quiet -r ci/requirements.txt
+  script:
+    - ./run-tests.sh
+  after_script:
+    - "PATH=$PATH:$HOME/.local/bin"
+    - ci/codecov-wrapper
+
+checks:pylint:
+  before_script:
+  - sudo dnf install -y python3-mypy
+  - pip3 install --quiet -r ci/requirements.txt
+  - mypy --install-types --non-interactive
+  script:
+  - python3 -m pylint --rcfile=.pylintrc qubesu2f
+  - mypy qubesu2f
+  stage: checks

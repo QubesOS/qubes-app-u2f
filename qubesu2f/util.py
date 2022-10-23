@@ -18,17 +18,19 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-'''Miscellaneous utilities.'''
+"""Miscellaneous utilities."""
 
 import asyncio
 import binascii
 import ctypes
+import hashlib
 import itertools
 import os
 import socket
 
-class raw_data(object):
-    '''Accessor for ctypes' byte arrays in structures.
+
+class raw_data:
+    """Accessor for ctypes' byte arrays in structures.
 
     >>> import ctypes
     >>> class MyStruct(ctypes.Structure):
@@ -44,7 +46,7 @@ class raw_data(object):
     >>> assert isinstance(s.data, bytes)
 
     Does not work with constructor (eg. ``S(data=b'fail')``.
-    '''
+    """
     # pylint: disable=invalid-name,too-few-public-methods
     def __init__(self, data, size=None):
         # size field, if specified, must be long enough
@@ -71,7 +73,7 @@ class raw_data(object):
 
         if value_len > sizeof:
             raise ValueError(
-                'value too long (should be at most {} bytes)'.format(sizeof))
+                f'value too long (should be at most {sizeof} bytes)')
 
         if self.size is not None:
             setattr(instance, self.size, value_len)
@@ -87,29 +89,29 @@ class raw_data(object):
 
 
 def u16n_read(buffer, offset=0):
-    '''Read 16-bit unsigned integer with network byte order
+    """Read 16-bit unsigned integer with network byte order
 
     It is not an error to pass buffer longer than 2 octets.
 
     :param bytes buffer: the buffer
     :param int offset: the offset into the buffer
-    '''
+    """
     return (buffer[offset] << 8) + (buffer[offset + 1])
 
 def u16n_write(value):
-    '''Return network byte order representation of 16-bit unsigned integer
+    """Return network byte order representation of 16-bit unsigned integer
 
     If the value is greater than 0xFFFF (65535) it silently overflows. This is
     on purpose, for use in Le.
-    '''
+    """
     return bytes(((value >> 8) & 0xff, value & 0xff))
 
 def hexlify(untrusted_data):
-    '''A slightly better version of :py:func:`binascii.hexlify()`'''
+    """A slightly better version of :py:func:`binascii.hexlify()`"""
     return binascii.hexlify(untrusted_data).decode('ascii')
 
 def maybe_hexlify(untrusted_data, maxsize=None):
-    '''Hexlify if argument is of type :class:`bytes` or :class:`ctypes.Array`'''
+    """Hexlify if argument is of type :class:`bytes` or :class:`ctypes.Array`"""
     if isinstance(untrusted_data, (bytes, ctypes.Array)):
         return hexlify(untrusted_data=(untrusted_data[:maxsize] if maxsize
             else untrusted_data))
@@ -123,7 +125,7 @@ def hexlify_with_parition(data, *lengths):
         (data[offsets[i]:offsets[i+1]] for i in range(len(offsets) - 1)))))
 
 class SystemDNotifyProtocol(asyncio.DatagramProtocol):
-    '''Protocol for talking to that init replacement.
+    """Protocol for talking to that init replacement.
 
     >>> transport, protocol = await loop.create_datagram_endpoint(
     ...     SystemDNotifyProtocol,
@@ -134,7 +136,7 @@ class SystemDNotifyProtocol(asyncio.DatagramProtocol):
     If `NOTIFY_SOCKET` environment variable is not set (meaning we are not
     running under that particular init replacement), the protocol silently does
     nothing. No validation is performed on the messages.
-    '''
+    """
     def __init__(self):
         self.transport = None
 
@@ -152,32 +154,30 @@ class SystemDNotifyProtocol(asyncio.DatagramProtocol):
         self.transport = transport
 
     def notify(self, **kwargs):
-        '''Send some messages
+        """Send some messages
 
         *kwargs* are sent, with the keyword turned to uppercase.
-        '''
+        """
         if self.addr is None:
             return
         for k, v in kwargs.items():
-            self.transport.sendto(
-                '{}={}'.format(k.upper(), v).encode('utf-8'), self.addr)
+            self.transport.sendto( # type: ignore
+                f'{k.upper()}={v}'.encode('utf-8'), self.addr)
 
 async def systemd_notify(**kwargs):
-    '''Send a message to certain init replacement
+    """Send a message to certain init replacement
 
     >>> systemd_notify(ready=1, status='started')
 
     If no messages are specified, a single `READY=1` message is sent.
 
     .. seealso:: :manpage:`sd_notify(3)`
-    '''
+    """
 
     if not kwargs:
         kwargs = {'READY': 1}
     loop = asyncio.get_event_loop()
 
-    # XXX asyncio will support loop.create_datagram_endpoint() with AF_UNIX
-    # in Python 3.7 (https://bugs.python.org/issue31245)
     try:
         transport, protocol = await loop.create_datagram_endpoint(
             SystemDNotifyProtocol,
@@ -187,3 +187,14 @@ async def systemd_notify(**kwargs):
 
     protocol.notify(**kwargs)
     transport.close()
+
+
+def qrexec_arg(key_handle):
+    """Argument for qrexec call to identify the key"""
+    # use first 128 bits of SHA-256, or 32 hexadecimal digits
+    return hashlib.sha256(key_handle).hexdigest()[:32]
+
+
+def int_to_bytes(num):
+    """Helper method to write integer as bytes"""
+    return num.to_bytes((num.bit_length() + 7) // 8, "big")

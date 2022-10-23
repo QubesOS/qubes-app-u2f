@@ -1,7 +1,7 @@
 #
 # The Qubes OS Project, https://www.qubes-os.org/
 #
-# Copyright (C) 2017  Wojtek Porczyk <woju@invisiblethingslab.com>
+# Copyright (C) 2022 Piotr Bartman <prbartman@invisiblethingslab.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,36 +18,22 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-"""
-Constants for CTAP protocol.
-"""
-# pylint: disable=invalid-name,missing-docstring
+"""Qrexec call: ctap2.Pin"""
 
-import enum
+import asyncio
+import sys
 
-TIMEOUT = 5
+from qubesu2f import sys_usb
+from qubesu2f.sys_usb.mux import mux
+# pylint: disable=duplicate-code
 
-HID_FRAME_SIZE = 64
+def main():
+    """Main routine of ``ctap2.Pin`` qrexec call"""
 
-# This is 7609. See [CTAPHID 11.2.4] for where it came from.
-MAX_MSG_SIZE = HID_FRAME_SIZE - 7 + 0x80 * (HID_FRAME_SIZE - 5)
-
-# Register
-
-U2F_NONCE_SIZE = 32  # "challenge parameter"
-U2F_APPID_SIZE = 32  # "application parameter"
-
-MAX_KH_SIZE = 255
+    sys_usb.setup_logging()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(mux(sys.stdin.buffer.read()))
 
 
-U2F_VERSION = 'U2F_V2'
-
-CTAPHID_IF_VERSION = 2
-
-
-@enum.unique
-class CTAPHID_TYPE(enum.IntEnum):
-    INIT = 1
-    CONT = 0
-
-QREXEC_CLIENT = '/usr/bin/qrexec-client-vm'
+if __name__ == '__main__':
+    sys.exit(main())

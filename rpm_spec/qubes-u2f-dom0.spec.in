@@ -14,7 +14,7 @@ BuildRequires:  make
 Requires:   qubes-core-dom0
 
 %description
-Qubes OS U2F proxy policy files
+Qubes OS CTAP proxy policy files
 
 %prep
 %setup -q -n qubes-u2f-%{version}
@@ -25,5 +25,7 @@ Qubes OS U2F proxy policy files
 make install-policy DESTDIR=$RPM_BUILD_ROOT
 
 %files
-/etc/qubes-rpc/policy/u2f.Register
-/etc/qubes-rpc/policy/u2f.Authenticate
+/etc/qubes-rpc/policy/ctap.ClientPin
+/etc/qubes-rpc/policy/ctap.GetInfo
+/etc/qubes-rpc/policy/ctap.MakeCredential
+/etc/qubes-rpc/policy/ctap.GetAssertion

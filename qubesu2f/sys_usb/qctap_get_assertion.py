@@ -18,38 +18,42 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-'''Qrexec call: u2f.Authenticate'''
+"""Qrexec call: ctap.GetAssertion"""
 
 import argparse
 import asyncio
-import logging  # pylint: disable=unused-import
-import logging.handlers  # pylint: disable=unused-import
 import os
 import sys
 
-from .. import proto
-from .. import tools
+from qubesu2f.protocol import RequestWrapper
+from qubesu2f import sys_usb
+from qubesu2f.sys_usb.mux import mux as default_mux
 
 parser = argparse.ArgumentParser()
-parser.add_argument('key_handle_hash', metavar='QREXEC_SERVICE_ARGUMENT',
-    default=os.getenv('QREXEC_SERVICE_ARGUMENT'),
-    nargs='?')
+parser.add_argument('credential_id_hash', metavar='QREXEC_SERVICE_ARGUMENT',
+                    default=os.getenv('QREXEC_SERVICE_ARGUMENT'),
+                    nargs='?')
 
-def main(args=None, mux=tools.mux):
-    '''Main routine of ``u2f.Register`` qrexec call'''
+
+def main(args=None, mux=default_mux):
+    """Main routine of ``ctap.MakeCredential`` qrexec call"""
 
     args = parser.parse_args(args)
-    tools.setup_logging()
+    sys_usb.setup_logging()
+    loop = asyncio.get_event_loop()
 
-    with proto.apdu_error_responder():
-        apdu = proto.CommandAPDUAuthenticate.from_stream(
-            sys.stdin.buffer)
+    untrusted_request = sys.stdin.buffer.read()
 
-    if (args.key_handle_hash is not None
-    and args.key_handle_hash != apdu.qrexec_arg):
+    request = RequestWrapper.from_bytes(untrusted_request)
+
+    allow_list = list(request.qrexec_args)
+    if (args.credential_id_hash is not None
+            and args.credential_id_hash not in allow_list):
         return 1
 
-    asyncio.get_event_loop().run_until_complete(mux(apdu))
+    loop.run_until_complete(mux(untrusted_request))
+    return 0
+
 
 if __name__ == '__main__':
     sys.exit(main())
