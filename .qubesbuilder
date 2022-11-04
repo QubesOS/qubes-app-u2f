@@ -9,3 +9,7 @@ vm:
   deb:
     build:
     - debian
+# exclude on centos-stream8, too old python
+vm-centos-stream8:
+  rpm:
+    build: []
