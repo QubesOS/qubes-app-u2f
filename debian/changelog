@@ -1,3 +1,19 @@
+qubes-u2f (1.2.10) unstable; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * Disable build for centos-stream too
+
+  [ Frédéric Pierret (fepitre) ]
+  * Drop Travis CI
+  * Add Qubes Builder v2 integration
+  * debian: ensure to clean pycache artifacts
+  * .qubesbuilder: replace 'spec' by 'build'
+
+  [ Marek Marczykowski-Górecki ]
+  * Disable on centos-stream8 with builderv2 too
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 04 Nov 2022 16:20:20 +0100
+
 qubes-u2f (1.2.9) unstable; urgency=medium
 
   [ Frédéric Pierret (fepitre) ]
