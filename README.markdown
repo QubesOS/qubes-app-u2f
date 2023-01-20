@@ -14,10 +14,10 @@ introduction and U2F threat model.
 
 ### Requirements
 
-- Qubes R3.2 or later (R4.0 or later recommended)
-- For Debian template: Debian 9 (stretch) or later
-- For Fedora template: Fedora 25 or later
-- Python 3.5
+- Qubes R4.1 or later
+- For Debian template: Debian 10 (stretch) or later
+- For Fedora template: Fedora 35 or later
+- Python 3.5 or later
 - https://github.com/Yubico/python-u2flib-host
 - For building manpages: `python3-sphinx`
 
@@ -26,11 +26,11 @@ introduction and U2F threat model.
 The guide assumes there is `sys-usb` qube which holds the USB Host PCI device
 and the qube which holds the browser (or other U2F client) is named `work`.
 
-1. In `debian-9`:
+1. In `debian-11`:
 ```
 sudo apt install qubes-u2f
 ```
-1. In `fedora-25`:
+1. In `fedora-36`:
 ```
 sudo dnf install qubes-u2f
 ```
@@ -42,9 +42,6 @@ qvm-service --enable work qubes-u2f-proxy
 
 ### Advanced: per-qube access enforced by policy
 
-*This requires Qubes R4.0 or later (as of this writing, available as release
-candidate).*
-
 In `dom0`, create a file
 `/etc/qubes-rpc/policy/policy.RegisterArgument+u2f.Authenticate` with the
 following content:
@@ -53,9 +50,9 @@ following content:
 sys-usb $anyvm allow,target=dom0
 ```
 
-Then remove `/etc/qubes-rpc/policy/u2f.Authenticate` and register your token.
-After doing this, any qube will have access only to tokens enrolled using that
-particular qube. Also, any previously registered token will not work.
+Then truncate `/etc/qubes-rpc/policy/u2f.Authenticate` to 0 bytes and register
+your token.  After doing this, any qube will have access only to tokens enrolled
+using that particular qube. Also, any previously registered token will not work.
 
 ## Threat model
 
