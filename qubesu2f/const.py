@@ -111,7 +111,7 @@ U2F_APPID_SIZE = 32  # "application parameter"
 U2F_REGISTER_ID = 0x05  # magic value of the first byte of Register response
 
 P256_POINT_SIZE = 65
-MAX_KH_SIZE = 128
+MAX_KH_SIZE = 255
 
 # Authenticate
 
