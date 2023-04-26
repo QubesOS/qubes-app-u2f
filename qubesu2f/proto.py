@@ -597,11 +597,9 @@ class CommandAPDURegister(CommandAPDU):
         request_data = untrusted_request_data
         return request_data
 
-    # this is unspecified, but at least chromium seems to include it
+    # this should be zero, but at least chromium and firefox submit a non-zero value; just ignore it
     def verify_p1(self, *, untrusted_p1):
-        # this raises ValueError if untrusted_p1 is not one of the enum values
-        p1 = const.U2F_AUTH(untrusted_p1)
-        return p1
+        return 0
 
     def hexdump_request_data(self):
         return util.hexlify_with_parition(self.request_data,
