@@ -18,7 +18,9 @@ introduction and U2F threat model.
 - For Debian template: Debian 10 (stretch) or later
 - For Fedora template: Fedora 35 or later
 - Python 3.5 or later
-- https://github.com/Yubico/python-u2flib-host
+- A Python FIDO2/U2F library, one of:
+  - https://github.com/Yubico/python-fido2
+  - https://github.com/Yubico/python-u2flib-host (deprecated)
 - For building manpages: `python3-sphinx`
 
 ### Installation

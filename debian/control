@@ -17,7 +17,7 @@ Vcs-Browser: https://github.com/QubesOS/qubes-app-u2f.git
 Package: qubes-u2f
 Architecture: all
 Depends:
- python3-u2flib-host,
+ python3-u2flib-host | python3-fido2,
  ${python3:Depends},
  ${misc:Depends}
 Description: Qubes OS U2F proxy

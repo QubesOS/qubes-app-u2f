@@ -47,8 +47,8 @@ if __name__ == '__main__':
         license='GPL2+',
         url='https://github.com/QubesOS/qubes-app-u2f',
         requires=[
-            'python_u2flib_host',
-        ],
+            'python_fido2',
+        ]
         packages=setuptools.find_packages(),
         package_data={
             'qubesu2f.tests': ['*.xpi'],
