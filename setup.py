@@ -48,7 +48,7 @@ if __name__ == '__main__':
         url='https://github.com/QubesOS/qubes-app-u2f',
         requires=[
             'python_fido2',
-        ]
+        ],
         packages=setuptools.find_packages(),
         package_data={
             'qubesu2f.tests': ['*.xpi'],
