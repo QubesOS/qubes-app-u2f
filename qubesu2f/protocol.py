@@ -357,7 +357,8 @@ class CborResponseWrapper(ResponseWrapper):
 
     @staticmethod
     def from_bytes(
-            untrusted_data: bytes, expected_type: Optional[type] = None
+            untrusted_data: bytes,
+            expected_type = None
     ) -> "CborResponseWrapper":
         """
         Returns wrapped instance of the CTAP2 response from bytes.
