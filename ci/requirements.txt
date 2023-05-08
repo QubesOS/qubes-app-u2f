@@ -3,3 +3,4 @@
 pylint
 codecov
 pytest
+fido2>=1.1.0
