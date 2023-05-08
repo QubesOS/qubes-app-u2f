@@ -159,19 +159,16 @@ class RequestWrapper(CommunicatWrapper, ABC):
 
         req_type, _ = untrusted_data[0], untrusted_data[1:]
         if req_type == 0 and 1 not in disable_protocols:
-            req_cls: type = ApduRequestWrapper
-            log.info("APDU request: use CTAP 1 protocol.")
+            req_cls: Type[RequestWrapper] = ApduRequestWrapper
             parser = ctap1.CommandAPDU.from_bytes
+            log.info("APDU request: use CTAP 1 protocol.")
         elif 2 not in disable_protocols:
             req_cls = CborRequestWrapper
             parser = ctap2.Ctap2Request.from_bytes
             log.info("Use CTAP 2 protocol.")
         else:
-            def parser(_):
-                return InvalidRequest(CtapError.ERR.NOT_ALLOWED)
-            req_cls = CborRequestWrapper
+            return CborRequestWrapper(InvalidRequest(APDU.USE_NOT_SATISFIED))
 
-        request = InvalidRequest(APDU.USE_NOT_SATISFIED)
         # pylint: disable=broad-except
         try:
             request = parser(untrusted_data)
@@ -180,10 +177,10 @@ class RequestWrapper(CommunicatWrapper, ABC):
             return result
         except ApduError as err:
             log.error("APDU parsing error: %s", str(err))
-            request = InvalidRequest(APDU.WRONG_DATA)
         except Exception as err:
             log.error("Parsing error: %s", str(err))
 
+        request = InvalidRequest(APDU.WRONG_DATA)
         log.warning("return InvalidRequest(%s)", request.return_code)
         return CborRequestWrapper(request)
 
