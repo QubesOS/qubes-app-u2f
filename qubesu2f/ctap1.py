@@ -26,15 +26,17 @@
         Interoperating with CTAP1/U2F authenticators (June 21, 2022)
 """
 import enum
-# pylint: enable=line-too-long
-
 import io
 import logging
+from typing import Optional
 
 from fido2.ctap1 import Ctap1, RegistrationData, SignatureData, APDU, ApduError
 
 from qubesu2f import const
 from qubesu2f import util
+
+
+# pylint: enable=line-too-long
 
 
 # pylint: disable=invalid-name,missing-class-docstring
@@ -63,7 +65,7 @@ class CommandAPDUMeta(type):
 class CommandAPDU(metaclass=CommandAPDUMeta):
     """Abstract class for command (request) APDU"""
     # != to any int, so fails .verify_ins() unless overridden in subclass
-    APDU_INS = None
+    APDU_INS: Optional[Ctap1.INS] = None
 
     def __new__(cls, untrusted_cla, untrusted_ins, untrusted_p1,
             untrusted_p2, untrusted_request_data, untrusted_le):
@@ -277,16 +279,13 @@ class Register(CommandAPDU):
         return util.hexlify_with_parition(self.request_data,
             const.U2F_NONCE_SIZE)
 
-    def execute(self, ctap):
-        try:
-            response = ctap.send_apdu(
-                ins=Ctap1.INS.REGISTER,
-                p1=self.p1,
-                data=self.request_data,
-            )
-            result = RegistrationData(response)
-        except ApduError as err:
-            result = err
+    def execute(self, ctap: Ctap1) -> RegistrationData:
+        response = ctap.send_apdu(
+            ins=Ctap1.INS.REGISTER,
+            p1=self.p1,
+            data=self.request_data,
+        )
+        result = RegistrationData(response)
         return result
 
 
@@ -314,7 +313,7 @@ class Authenticate(CommandAPDU):
         return request_data
 
     @property
-    def qrexec_arg(self):
+    def qrexec_arg(self) -> str:
         """A qrexec argument for key_handle of this APDU"""
         return util.qrexec_arg(self.key_handle)
 
@@ -322,16 +321,13 @@ class Authenticate(CommandAPDU):
         return util.hexlify_with_parition(self.request_data,
             const.U2F_NONCE_SIZE, const.U2F_APPID_SIZE, 1)
 
-    def execute(self, ctap):
-        try:
-            response = ctap.send_apdu(
-                ins=Ctap1.INS.AUTHENTICATE,
-                p1=0x03,
-                data=self.request_data,
-            )
-            result = SignatureData(response)
-        except ApduError as err:
-            result = err
+    def execute(self, ctap: Ctap1) -> SignatureData:
+        response = ctap.send_apdu(
+            ins=Ctap1.INS.AUTHENTICATE,
+            p1=0x03,
+            data=self.request_data,
+        )
+        result = SignatureData(response)
         return result
 
 

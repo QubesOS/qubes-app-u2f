@@ -354,8 +354,10 @@ class CTAPHIDDevice(uhid.UHIDDevice):
         resp.minor = (self.version >> 16) & 0xff  # type: ignore
         resp.build = (self.version >>  8) & 0xff  # type: ignore
 
-        resp.caps = sum(cap for cap in CAPABILITY
-            if hasattr(self, 'handle_ctaphid_' + cap.name.lower()))
+        resp.caps = sum(cap for cap in CAPABILITY  # type: ignore
+            if hasattr(
+            self, 'handle_ctaphid_' + cap.name.lower()  # type: ignore
+        ))
 
         await self.write_ctaphid_response(cid, CTAPHID.INIT, bytes(resp))
 

@@ -191,12 +191,12 @@ class RequestWrapper(CommunicatWrapper, ABC):
         if isinstance(self.data, InvalidRequest):
             code = int.from_bytes(self.data.return_code, "big")
             if protocol == "fido2":
-                err = CtapError(code)
+                err: Union[CtapError, ApduError] = CtapError(code)
             elif protocol == "u2f":
                 err = ApduError(code)
             else:
                 try:
-                    err = CtapError.ERR(code)
+                    err = CtapError(code)
                 except ValueError:
                     err = ApduError(code)
             raise err
@@ -236,7 +236,7 @@ class ApduResponseWrapper(ResponseWrapper, ABC):
         if isinstance(self.data, bytes):
             if len(self.data) == 2:
                 return self.data
-            return APDU.USE_NOT_SATISFIED
+            return int_to_bytes(APDU.USE_NOT_SATISFIED)
         codes = {APDU.USE_NOT_SATISFIED: b'\x69\x85',
                  APDU.WRONG_DATA: b'\x6A\x80'}
         result = codes.get(self.data.code,
@@ -349,7 +349,9 @@ class CborResponseWrapper(ResponseWrapper):
         Returns the credential id hash as qrexec argument.
         """
         if isinstance(self.data, AttestationResponse):
-            return qrexec_arg(self.data.auth_data.credential_data.credential_id)
+            return qrexec_arg(
+                self.data.auth_data.credential_data.credential_id # type: ignore
+            )
         raise InvalidCommandError()
 
     @staticmethod
@@ -405,7 +407,8 @@ class CborRequestWrapper(RequestWrapper):
         Execute wrapped CTAP2 request and return wrapped CTAP2 response.
         """
         try:
-            ctap = Ctap2(device)  #fails if device do not support CTAP2
+            ctap: Union[Ctap1, Ctap2] = \
+                Ctap2(device)  #fails if device do not support CTAP2
             expected_err: Type[Exception] = CtapError
             wrapper: Type = CborResponseWrapper
             logging.getLogger('ctap').debug("Execute CTAP2 request")

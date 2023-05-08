@@ -26,18 +26,20 @@
         (June 21, 2022)
 """
 from dataclasses import dataclass, fields, Field
-from typing import Optional, Sequence, Any, Mapping, List, Iterable
+from typing import Optional, Any, Mapping, List, Iterable, Hashable, \
+    Dict
 
 from fido2 import cbor
-from fido2.webauthn import PublicKeyCredentialRpEntity
+from fido2.ctap import CtapError
 from fido2.ctap2.base import Ctap2, Info, args, _CborDataObject, \
     AttestationResponse, AssertionResponse
+from fido2.webauthn import PublicKeyCredentialRpEntity
 
 from qubesu2f.util import qrexec_arg
 
 
 @dataclass(eq=False, frozen=True)
-class Ctap2Dataclass(_CborDataObject[int]):
+class Ctap2Dataclass(_CborDataObject):
     """
     Mapping representing a CTAP2 request/response.
     """
@@ -47,18 +49,23 @@ class Ctap2Dataclass(_CborDataObject[int]):
         return fields(cls).index(field) + 1
 
     @classmethod
-    def from_dict(cls, data: Mapping[int, Any]) -> "Ctap2Dataclass":
+    def from_dict(
+            cls, data: Optional[Mapping[int, Any]]
+    ) -> "Ctap2Dataclass":
         """
         Creates an instance of Ctap2Dataclass from a dictionary.
 
         The keys in the dictionary are expected to match the CBOR keys
         for the fields in the class.
         """
-        kwargs = {attr.name: None for attr in fields(cls)
-                  if hasattr(attr.type, "__args__")
-                  # Set None for Optional by default
-                  and attr.type.__args__[-1] is type(None)
-                  }
+        assert data is not None
+        kwargs: Dict[Hashable, Any] = \
+            {
+                attr.name: None for attr in fields(cls)
+                if hasattr(attr.type, "__args__")
+                # Set None for Optional by default
+                and attr.type.__args__[-1] is type(None)
+            }
         for field in fields(cls):
             if cls._get_field_key(field) in data:
                 kwargs[field.name] = data[cls._get_field_key(field)]
@@ -186,8 +193,8 @@ class MakeCredential(Ctap2Request):
     client_data_hash: bytes
     rp: PublicKeyCredentialRpEntity
     user: dict
-    pub_key_cred_params: List[dict]
-    exclude_list: Optional[dict]
+    pub_key_cred_params: List[Mapping[str, Any]]
+    exclude_list: Optional[List[Mapping[str, Any]]]
     extensions: Optional[dict]
     options: Optional[dict]
     pin_uv_auth_param: Optional[bytes]
@@ -245,7 +252,7 @@ class GetAssertion(Ctap2Request):
     """
     rp_id: str
     client_data_hash: bytes
-    allow_list: Optional[Sequence[dict]]
+    allow_list: Optional[List[Mapping[str, Any]]]
     extensions: Optional[dict]
     options: Optional[dict]
     pin_uv_auth_param: Optional[bytes]
@@ -356,4 +363,7 @@ class ClientPIN(Ctap2Request):
                 self.permissions_rpid,
             )
         )
-        return ClientPINResponse.from_dict(response)
+        parsed = ClientPINResponse.from_dict(response)  # type: ignore
+        if not isinstance(parsed, ClientPINResponse):
+            raise CtapError(1)
+        return parsed
