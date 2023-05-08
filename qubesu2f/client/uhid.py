@@ -22,11 +22,11 @@
 
 import asyncio
 import ctypes
-import distutils.version
 import enum
 import errno
 import logging
 from typing import Optional, BinaryIO
+from packaging.version import parse
 
 from qubesu2f import util
 
@@ -374,12 +374,12 @@ class UHIDDevice:
             # nothing to do
             return
 
-        version = distutils.version.StrictVersion(self.version)
-        major, minor, subminor = version.version
-        if version.prerelease is None:
+        version = parse(self.version)
+        major, minor, subminor = version.major, version.minor, version.micro
+        if version.pre is None:
             pre = 0xff
         else:
-            tag, pre = version.prerelease
+            tag, pre = version.pre
             if tag == 'b':
                 pre += 0x80
         self.version = (major << 24) + (minor << 16) + (subminor << 8) + pre
