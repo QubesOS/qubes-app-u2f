@@ -30,9 +30,9 @@ import pathlib
 import sys
 
 try:
-    import u2flib_host.u2f  # pylint: disable=import-error
-except ImportError:
     import fido2  # pylint: disable=import-error
+except ImportError:
+    import u2flib_host.u2f  # pylint: disable=import-error
 
 from .. import const
 from .. import proto
