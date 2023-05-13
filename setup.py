@@ -5,7 +5,7 @@ import pathlib
 import setuptools
 import setuptools.command.install
 
-from qubesu2f import __version__
+from qubesctap import __version__
 assert __version__ == pathlib.Path('version').read_text().strip()
 
 def get_console_scripts(path):
@@ -23,7 +23,7 @@ class CustomInstall(setuptools.command.install.install):
         bin = os.path.join(self.root, "usr/bin")
         os.makedirs(bin, exist_ok=True)
 
-        for source_path in ('qubesu2f/client', 'qubesu2f/sys_usb'):
+        for source_path in ('qubesctap/client', 'qubesctap/sys_usb'):
             for file, pkg in get_console_scripts(source_path):
                 path = os.path.join(bin, file)
                 with open(path, "w") as f:
@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
 if __name__ == '__main__':
     setuptools.setup(
-        name='qubesu2f',
+        name='qubesctap',
         version=__version__,
         author='Piotr Bartman',
         author_email='prbartman@invisiblethingslab.com',
@@ -52,9 +52,6 @@ if __name__ == '__main__':
             'python_fido2',
         ],
         packages=setuptools.find_packages(),
-        package_data={
-            'qubesu2f.tests.manual': ['*.xpi'],
-        },
         cmdclass={
             'install': CustomInstall,
         },

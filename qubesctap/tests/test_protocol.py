@@ -20,9 +20,9 @@
 # USA.
 import pytest
 
-from qubesu2f.protocol import ApduResponseWrapper, CborResponseWrapper, \
+from qubesctap.protocol import ApduResponseWrapper, CborResponseWrapper, \
     InvalidCommandError, RequestWrapper
-from qubesu2f.tests.conftest import get_response_bytes, \
+from qubesctap.tests.conftest import get_response_bytes, \
     get_response_class, get_request_bytes, get_request_class, get_qrexec_arg
 
 

@@ -22,8 +22,8 @@ Qrexec calls
 ------------
 
 ``ctap.ClientPin``
-    On standard input a complete CTAP request (APDU/CBOR) command is expected.
-    On standard output, CTAP response (APDU/CBOR) is returned.
+    On standard input a complete CTAP request (CBOR) command is expected.
+    On standard output, CTAP response (CBOR) is returned.
 
 Bugs
 ----
@@ -36,11 +36,11 @@ To enable debug log, touch either of those files:
 
 The log will be sent to syslog AUTH facility.
 
-To disable ``CTAP1`` / ``CTAP2``,  touch either of those files:
+To disable ``CTAP2``,  touch either of those files:
 
-- ``/etc/qubes/ctap{1, 2}-disable``
+- ``/etc/qubes/ctap2-disable``
 
-- ``/usr/local/etc/qubes/ctap{1, 2}-disable``
+- ``/usr/local/etc/qubes/ctap2-disable``
 
 Author
 ------

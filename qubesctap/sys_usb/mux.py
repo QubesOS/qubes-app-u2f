@@ -30,8 +30,8 @@ from fido2.ctap import CtapError
 from fido2.ctap1 import APDU, ApduError
 from fido2.hid import CtapHidDevice
 
-from qubesu2f import const
-from qubesu2f.protocol import RequestWrapper, ResponseWrapper
+from qubesctap import const
+from qubesctap.protocol import RequestWrapper, ResponseWrapper
 
 
 async def mux(
@@ -40,9 +40,9 @@ async def mux(
     """Send request (APDU/CBOR) to all discovered devices
     and return one response.
 
-    If a :py:obj:`qubesu2f.const.U2F_SW.NO_ERROR` response came, return it.
+    If a valid response came, return it.
     Else, if at least one
-    :py:obj:`qubesu2f.const.U2F_SW.CONDITION_NOT_SATISFIED` came, return that.
+    :py:obj:`APDU.USE_NOT_SATISFIED` came, return that.
     Else, return some other response.
 
     If no devices, return :py:obj:`None`.
@@ -56,7 +56,11 @@ async def mux(
         loop = asyncio.get_event_loop()
 
     response = await _mux(
-        untrusted_request=untrusted_request, devices=devices, timeout=timeout, loop=loop)
+        untrusted_request=untrusted_request,
+        devices=devices,
+        timeout=timeout,
+        loop=loop
+    )
 
     stream.write(bytes(response))
     stream.close()

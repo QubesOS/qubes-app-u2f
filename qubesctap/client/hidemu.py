@@ -34,16 +34,16 @@ from fido2.ctap import CtapError
 from fido2.ctap1 import APDU, ApduError  # pylint: disable=unused-import
 from fido2.hid import CTAPHID, CAPABILITY
 
-import qubesu2f.client.hid_data
-from qubesu2f import const
-from qubesu2f import util
-from qubesu2f.client import uhid
-from qubesu2f.protocol import RequestWrapper
-from qubesu2f.util import int_to_bytes
+import qubesctap.client.hid_data
+from qubesctap import const
+from qubesctap import util
+from qubesctap.client import uhid
+from qubesctap.protocol import RequestWrapper
+from qubesctap.util import int_to_bytes
 
 VENDOR_ID = 0xf055
 PRODUCT_ID = 0xf1d0
-from qubesu2f import __version__ as VERSION  # pylint: disable=wrong-import-position
+from qubesctap import __version__ as VERSION  # pylint: disable=wrong-import-position
 
 # pylint: disable=invalid-name,missing-class-docstring
 @enum.unique
@@ -175,7 +175,7 @@ class CTAPHIDDevice(uhid.UHIDDevice):
 
         # This is a workaround against uhid, which sometimes includes one
         # byte in front of actual data. What it depends on?
-        packet = qubesu2f.client.hid_data.CTAPHIDPacket.from_address(
+        packet = qubesctap.client.hid_data.CTAPHIDPacket.from_address(
             ctypes.addressof(event.output.data) + event.output.size
             - const.HID_FRAME_SIZE)
         self.log.getChild('ctaphid').debug('handle_hid_output() %r', packet)
@@ -235,7 +235,7 @@ class CTAPHIDDevice(uhid.UHIDDevice):
         """
         assert len(data) <= const.MAX_MSG_SIZE
 
-        packet = qubesu2f.client.hid_data.CTAPHIDPacket(cid=cid)
+        packet = qubesctap.client.hid_data.CTAPHIDPacket(cid=cid)
         self.log.getChild('ctaphid').debug(
             'write_ctaphid_response(cid=%#08x, cmd=%s, data=%s)',
             cid, cmd, util.hexlify(data))
@@ -345,7 +345,7 @@ class CTAPHIDDevice(uhid.UHIDDevice):
         Creates a new channel.
         """
         self.log.getChild('ctaphid').debug('handle_ctaphid_init()')
-        resp = qubesu2f.client.hid_data.CTAPHIDInitResp()
+        resp = qubesctap.client.hid_data.CTAPHIDInitResp()
         resp.nonce = data
         resp.cid = self.create_new_channel()
         resp.version = const.CTAPHID_IF_VERSION

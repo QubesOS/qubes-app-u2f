@@ -24,7 +24,7 @@ Synopsis
 Description
 -----------
 
-This daemon emulates a HID device which forwards U2F requests over qrexec to
+This daemon emulates a HID device which forwards CTAP requests over qrexec to
 a real device in a domain which holds USB host.
 
 Options

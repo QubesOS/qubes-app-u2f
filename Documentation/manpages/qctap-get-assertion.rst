@@ -15,6 +15,7 @@ This program handles ``ctap.GetAssertion`` qrexec call. As the argument there
 should be first 128 bits of SHA-256 digest over credential ID, as hexadecimal
 digits. The program verifies if it matches the credential ID included in the
 request.
+This is a backward compatible equivalent to old ``u2f.Authenticate``.
 
 Environment variables
 ---------------------

@@ -1,12 +1,12 @@
-Name:		qubes-u2f-dom0
+Name:		qubes-ctap-dom0
 Version:	@VERSION@
 Release:	1%{?dist}
-Summary:    Qubes OS U2F proxy policy files
+Summary:    Qubes OS CTAP proxy policy files
 
 Group:		Qubes
 License:	GPL2+
 URL:		https://github.com/QubesOS/qubes-app-u2f
-Source0:    qubes-u2f-%{version}.tar.gz
+Source0:    qubes-ctap-%{version}.tar.gz
 
 BuildArch:  noarch
 
@@ -17,7 +17,7 @@ Requires:   qubes-core-dom0
 Qubes OS CTAP proxy policy files
 
 %prep
-%setup -q -n qubes-u2f-%{version}
+%setup -q -n qubes-ctap-%{version}
 
 %build
 

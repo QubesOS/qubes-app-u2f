@@ -32,6 +32,6 @@ checks:pylint:
   - pip3 install --quiet -r ci/requirements.txt
   - mypy --install-types --non-interactive
   script:
-  - python3 -m pylint --rcfile=.pylintrc qubesu2f
-  - mypy qubesu2f
+  - python3 -m pylint --rcfile=.pylintrc qubesctap
+  - mypy qubesctap
   stage: checks

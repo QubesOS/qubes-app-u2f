@@ -1,4 +1,4 @@
-U2F qrexec transport
+CTAP qrexec transport
 ====================
 
 This is a formal specification for encapsulating CTAP communication [`FIDO2`_]
@@ -12,7 +12,7 @@ The calls
 * ``ctap.GetAssertion+CREDID``
 * ``ctap.GetInfo``
 * ``ctap.ClientPin``
-* ``u2f.vnd.VENDOR.COMMAND``
+* ``ctap.vnd.VENDOR.COMMAND``
 
 Raw ISO 7816-compliant command APDU with extended length encoding should be
 supplied on standard input. The response APDU will arrive on standard output.

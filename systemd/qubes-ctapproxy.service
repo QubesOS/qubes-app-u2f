@@ -1,0 +1,9 @@
+[Unit]
+Description=Default instance of qubes-ctap-proxy
+
+[Service]
+Type=oneshot
+ExecStart=/bin/true
+
+[Install]
+Also=qubes-ctapproxy@sys-usb.service

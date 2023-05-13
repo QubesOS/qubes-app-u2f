@@ -23,10 +23,10 @@ from unittest.mock import patch
 
 import pytest
 
-from qubesu2f.client import uhid
-from qubesu2f.protocol import RequestWrapper
-from qubesu2f.sys_usb.mux import mux
-from qubesu2f.tests.conftest import get_request, \
+from qubesctap.client import uhid
+from qubesctap.protocol import RequestWrapper
+from qubesctap.sys_usb.mux import mux
+from qubesctap.tests.conftest import get_request, \
     get_response_bytes, mocked_stdio
 
 TEST_HID_NAME = 'Qubes CTAP test device'

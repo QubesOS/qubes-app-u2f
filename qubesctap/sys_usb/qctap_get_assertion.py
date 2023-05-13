@@ -25,9 +25,9 @@ import asyncio
 import os
 import sys
 
-from qubesu2f.protocol import RequestWrapper
-from qubesu2f import sys_usb
-from qubesu2f.sys_usb.mux import mux as default_mux
+from qubesctap.protocol import RequestWrapper
+from qubesctap import sys_usb
+from qubesctap.sys_usb.mux import mux as default_mux
 
 parser = argparse.ArgumentParser()
 parser.add_argument('credential_id_hash', metavar='QREXEC_SERVICE_ARGUMENT',

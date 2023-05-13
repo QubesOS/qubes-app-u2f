@@ -35,8 +35,8 @@ from fido2.ctap import CtapError
 from fido2.ctap1 import Ctap1, RegistrationData, SignatureData, APDU, ApduError
 from fido2.ctap2 import Ctap2, AssertionResponse, AttestationResponse, Info
 
-from qubesu2f import ctap1, ctap2
-from qubesu2f.util import qrexec_arg, int_to_bytes
+from qubesctap import ctap1, ctap2
+from qubesctap.util import qrexec_arg, int_to_bytes
 
 CTAP1_ACCEPTABLE_RESPONSES = (RegistrationData, SignatureData)
 CTAP2_ACCEPTABLE_RESPONSES = (AssertionResponse, AttestationResponse, Info,

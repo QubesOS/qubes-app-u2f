@@ -16,7 +16,7 @@ This implements [FIDO 2][FIDO2] with [HID encapsulation][CTAPHID].
 - TODO: For Debian template: Debian 10 (stretch) or later
 - For Fedora template: Fedora 35 or later
 - Python 3.7 or later
-- https://github.com/Yubico/python-u2flib-host
+- https://github.com/Yubico/python-fido2
 - For building manpages: `python3-sphinx`
 
 ### Installation
@@ -26,16 +26,16 @@ and the qube which holds the browser (or other CTAP client) is named `work`.
 
 1. In `debian-11` (TODO):
 ```
-sudo apt install qubes-u2f
+sudo apt install qubes-ctap
 ```
 1. In `fedora-36`:
 ```
-sudo dnf install qubes-u2f
+sudo dnf install qubes-ctap
 ```
 1. In `dom0`:
 ```
-qubes-dom0-update qubes-u2f-dom0
-qvm-service --enable work qubes-u2f-proxy
+qubes-dom0-update qubes-ctap-dom0
+qvm-service --enable work qubes-ctap-proxy
 ```
 
 ### Advanced: per-qube access enforced by policy

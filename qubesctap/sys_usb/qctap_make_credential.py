@@ -25,9 +25,9 @@ import logging
 import os
 import sys
 
-from qubesu2f.protocol import InvalidCommandError
-from qubesu2f import sys_usb, const
-from qubesu2f.sys_usb.mux import mux as default_mux
+from qubesctap.protocol import InvalidCommandError
+from qubesctap import sys_usb, const
+from qubesctap.sys_usb.mux import mux as default_mux
 
 
 def main(mux=default_mux):

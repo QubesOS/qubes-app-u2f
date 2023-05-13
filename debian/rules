@@ -7,7 +7,7 @@
 DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/default.mk
 
-export PYBUILD_NAME=qubesu2f
+export PYBUILD_NAME=qubesctap
 
 # main packaging script based on dh7 syntax
 %:
@@ -18,11 +18,11 @@ override_dh_auto_build:
 	$(MAKE) -C Documentation man
 
 override_dh_install:
-	make install DESTDIR=$(CURDIR)/debian/qubes-u2f \
+	make install DESTDIR=$(CURDIR)/debian/qubes-ctap \
 		SETUPOPTS=--install-layout=deb \
 		UNITDIR=/lib/systemd/system \
 		PRESETDIR=/lib/systemd/system-preset
-	$(MAKE) -C Documentation install DESTDIR=$(CURDIR)/debian/qubes-u2f
+	$(MAKE) -C Documentation install DESTDIR=$(CURDIR)/debian/qubes-ctap
 
 override_dh_clean:
 	dh_clean -O--buildsystem=pybuild

@@ -24,8 +24,8 @@ from unittest.mock import patch
 
 import pytest
 
-from qubesu2f.client import uhid, qctap_proxy
-from qubesu2f.tests.conftest import get_request, \
+from qubesctap.client import uhid, qctap_proxy
+from qubesctap.tests.conftest import get_request, \
     get_response_bytes, get_response_class, FakeQrexecClient
 
 TEST_HID_NAME = 'Qubes CTAP test device'

@@ -23,11 +23,11 @@ from unittest.mock import patch
 
 import pytest
 
-from qubesu2f.sys_usb import qctap_make_credential
-from qubesu2f.tests.conftest import mocked_stdio, get_response
+from qubesctap.sys_usb import qctap_make_credential
+from qubesctap.tests.conftest import mocked_stdio, get_response
 
 
-@patch('qubesu2f.sys_usb.qctap_make_credential.qrexec_register_argument')
+@patch('qubesctap.sys_usb.qctap_make_credential.qrexec_register_argument')
 @pytest.mark.parametrize(
     "action",
     ("MakeCredential", "Register", "CtapError")

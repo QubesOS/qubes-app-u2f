@@ -31,12 +31,12 @@ import signal
 from fido2.ctap1 import APDU, ApduError, RegistrationData, SignatureData
 from fido2.ctap2 import AssertionResponse, AttestationResponse, Info
 
-from qubesu2f.protocol import ApduResponseWrapper, CborResponseWrapper, \
+from qubesctap.protocol import ApduResponseWrapper, CborResponseWrapper, \
     RequestWrapper
-from qubesu2f import const, ctap2
-from qubesu2f.client import hidemu, uhid
-from qubesu2f import util
-from qubesu2f.util import int_to_bytes
+from qubesctap import const, ctap2
+from qubesctap.client import hidemu, uhid
+from qubesctap import util
+from qubesctap.util import int_to_bytes
 
 
 class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
@@ -221,7 +221,6 @@ def main(args=None):
         format='%(asctime)s %(name)s %(message)s',
         filename='/var/log/qubes/qctap',
         level=sum(args.loglevel),
-        force=True
     )
 
     loop = asyncio.get_event_loop()

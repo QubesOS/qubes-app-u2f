@@ -35,9 +35,9 @@ import signal
 import sys
 from typing import Optional
 
-import qubesu2f.client.hid_data
-from qubesu2f import const
-from qubesu2f import util
+import qubesctap.client.hid_data
+from qubesctap import const
+from qubesctap import util
 
 # https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/usb/usbmon.txt
 
@@ -148,7 +148,7 @@ class USBMonPacket:
         self.dir_in = bool(hdr.epnum & 0x80)
 
         if self.length == self.len_cap == const.HID_FRAME_SIZE:
-            self.data = qubesu2f.client.hid_data.CTAPHIDPacket.from_buffer(data)
+            self.data = qubesctap.client.hid_data.CTAPHIDPacket.from_buffer(data)
         else:
             self.data = data.raw[:self.len_cap]
 
@@ -219,11 +219,11 @@ class USBMon:
             sys.stderr.write('warning: queue full, dropping packet\n')
 
 
-async def u2fmon(bus=0, device=-1):
-    """The actual U2F monitor. Print one CTAPHID packet per line."""
+async def ctap_monitor(bus=0, device=-1):
+    """The actual CTAP monitor. Print one CTAPHID packet per line."""
     with open(USBMONPATH.format(bus=bus), 'rb', buffering=0) as fd:
         async for packet in USBMon(fd):
-            if device >= 0 and packet.devnum != device:
+            if 0 <= device != packet.devnum:
                 continue
             if not packet.length == packet.len_cap == const.HID_FRAME_SIZE:
                 continue
@@ -249,7 +249,7 @@ def main(args=None):
     args = parser.parse_args(args)
     loop = asyncio.get_event_loop()
 
-    fut = loop.create_task(u2fmon(args.bus, args.device))
+    fut = loop.create_task(ctap_monitor(args.bus, args.device))
     for signame in ('SIGINT', 'SIGTERM'):
         loop.add_signal_handler(getattr(signal, signame),
             sighandler, signame, fut)

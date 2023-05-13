@@ -26,7 +26,7 @@ import ctypes
 
 from fido2.hid import CTAPHID
 
-from qubesu2f import util, const
+from qubesctap import util, const
 
 # pylint: disable=too-few-public-methods,missing-docstring
 

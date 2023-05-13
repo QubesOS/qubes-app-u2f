@@ -1,11 +1,11 @@
 host:
   rpm:
     build:
-    - rpm_spec/qubes-u2f-dom0.spec
+    - rpm_spec/qubes-ctap-dom0.spec
 vm:
   rpm:
     build:
-    - rpm_spec/qubes-u2f.spec
+    - rpm_spec/qubes-ctap.spec
   deb:
     build:
     - debian

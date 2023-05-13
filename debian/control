@@ -1,7 +1,7 @@
-Source: qubes-u2f
+Source: qubes-ctap
 Section: utils
 Priority: optional
-Maintainer: Wojtek Porczyk <woju@invisiblethingslab.com>
+Maintainer: Piotr Bartman <prbartman@invisiblethingslab.com>
 Build-Depends:
  debhelper,
  dh-python,
@@ -14,11 +14,13 @@ Homepage: https://github.com/QubesOS/qubes-app-u2f.git
 Vcs-Git: https://github.com/QubesOS/qubes-app-u2f.git
 Vcs-Browser: https://github.com/QubesOS/qubes-app-u2f.git
 
-Package: qubes-u2f
+Package: qubes-ctap
 Architecture: all
 Depends:
- python3-u2flib-host,
+ python3-fido2,
  ${python3:Depends},
  ${misc:Depends}
-Description: Qubes OS U2F proxy
- A secure forwarder for U2F messages.
+Replaces: qubes-u2f (<< 2.0.0)
+Breaks: qubes-u2f (<< 2.0.0)
+Description: Qubes OS CTAP proxy
+ A secure forwarder for CTAP messages.

@@ -28,7 +28,7 @@ import logging
 from typing import Optional, BinaryIO
 from packaging.version import parse
 
-from qubesu2f import util
+from qubesctap import util
 
 # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
 

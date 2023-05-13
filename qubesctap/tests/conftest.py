@@ -26,10 +26,10 @@ from fido2.ctap import CtapError
 from fido2.ctap1 import ApduError, RegistrationData, SignatureData
 from fido2.ctap2 import AttestationResponse, AssertionResponse, Info
 
-from qubesu2f import ctap2
-from qubesu2f.ctap1 import Register, Authenticate
-from qubesu2f.ctap2 import MakeCredential, GetAssertion, GetInfo, ClientPIN
-from qubesu2f.protocol import InvalidRequest, RequestWrapper, \
+from qubesctap import ctap2
+from qubesctap.ctap1 import Register, Authenticate
+from qubesctap.ctap2 import MakeCredential, GetAssertion, GetInfo, ClientPIN
+from qubesctap.protocol import InvalidRequest, RequestWrapper, \
     ApduResponseWrapper, CborResponseWrapper
 
 

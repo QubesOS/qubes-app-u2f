@@ -32,8 +32,8 @@ from typing import Optional
 
 from fido2.ctap1 import Ctap1, RegistrationData, SignatureData, APDU, ApduError
 
-from qubesu2f import const
-from qubesu2f import util
+from qubesctap import const
+from qubesctap import util
 
 
 # pylint: enable=line-too-long

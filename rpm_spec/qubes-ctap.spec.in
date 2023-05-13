@@ -1,0 +1,95 @@
+Name:		qubes-ctap
+Version:	@VERSION@
+Release:	1%{?dist}
+Summary:	Qubes OS CTAP proxy
+
+Group:		Qubes
+License:	GPL2+
+URL:		https://github.com/QubesOS/qubes-app-ctap
+Source0:    %{name}-%{version}.tar.gz
+
+BuildArch:  noarch
+BuildRequires:	python%{python3_pkgversion}-devel
+BuildRequires:	python%{python3_pkgversion}-sphinx
+%{?systemd_requires}
+BuildRequires:  make
+BuildRequires:  systemd
+
+Requires:	python%{python3_pkgversion}
+Requires:	python%{python3_pkgversion}-fido2
+
+Obsoletes: qubes-u2f
+Provides: qubes-u2f = %{version}
+
+%description
+Qubes OS CTAP proxy
+
+%prep
+%setup -q
+
+%build
+make PYTHON=%{__python3}
+make -C Documentation man SPHINXBUILD=sphinx-build-%{python3_version}
+
+%install
+make install \
+    UNITDIR=%{_unitdir} \
+    UDEVRULESDIR=%{_udevrulesdir} \
+    DESTDIR=$RPM_BUILD_ROOT \
+    PYTHON=%{__python3}
+
+make -C Documentation install \
+	MANDIR=%{_mandir} \
+    DESTDIR=$RPM_BUILD_ROOT \
+    PYTHON=%{__python3}
+
+%post
+%systemd_post qubes-ctapproxy.service
+
+%preun
+%systemd_preun qubes-ctapproxy.service
+
+%postun
+%systemd_postun_with_restart qubes-ctapproxy.service
+
+%files
+%doc
+%{_mandir}/man8/qctap-*.8*
+
+%{_bindir}/qctap-*
+%{_sysconfdir}/qubes-rpc/ctap.ClientPin
+%{_sysconfdir}/qubes-rpc/ctap.GetInfo
+%{_sysconfdir}/qubes-rpc/ctap.MakeCredential
+%{_sysconfdir}/qubes-rpc/ctap.GetAssertion
+%{_sysconfdir}/qubes/post-install.d/30-qubes-ctap.sh
+
+%{_presetdir}/75-qubes-ctapproxy.preset
+%{_unitdir}/qubes-ctapproxy@.service
+%{_unitdir}/qubes-ctapproxy.service
+%{_udevrulesdir}/60-qctap-hidraw.rules
+
+%{python3_sitelib}/qubesctap-%{version}-*.egg-info
+
+%{python3_sitelib}/qubesctap/__init__.py
+%{python3_sitelib}/qubesctap/__pycache__/*
+%{python3_sitelib}/qubesctap/const.py
+%{python3_sitelib}/qubesctap/ctap1.py
+%{python3_sitelib}/qubesctap/ctap2.py
+%{python3_sitelib}/qubesctap/protocol.py
+%{python3_sitelib}/qubesctap/util.py
+
+%{python3_sitelib}/qubesctap/client/__init__.py
+%{python3_sitelib}/qubesctap/client/__pycache__/*
+%{python3_sitelib}/qubesctap/client/hid_data.py
+%{python3_sitelib}/qubesctap/client/hidemu.py
+%{python3_sitelib}/qubesctap/client/qctap_proxy.py
+%{python3_sitelib}/qubesctap/client/uhid.py
+
+%{python3_sitelib}/qubesctap/sys_usb/__init__.py
+%{python3_sitelib}/qubesctap/sys_usb/__pycache__/*
+%{python3_sitelib}/qubesctap/sys_usb/mux.py
+%{python3_sitelib}/qubesctap/sys_usb/qctap_get_assertion.py
+%{python3_sitelib}/qubesctap/sys_usb/qctap_client_pin.py
+%{python3_sitelib}/qubesctap/sys_usb/qctap_get_info.py
+%{python3_sitelib}/qubesctap/sys_usb/qctap_make_credential.py
+%{python3_sitelib}/qubesctap/sys_usb/qctap_dump.py

@@ -1,6 +1,6 @@
-ACTION=="remove", GOTO="qu2f_hidraw_end"
+ACTION=="remove", GOTO="qctap_hidraw_end"
 SUBSYSTEM=="hidraw", MODE="0660", GROUP="qubes"
 SUBSYSTEM=="usb", MODE="0664", GROUP="qubes"
-LABEL="qu2f_hidraw_end"
+LABEL="qctap_hidraw_end"
 
 # vim: ft=udevrules

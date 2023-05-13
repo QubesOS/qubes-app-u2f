@@ -12,6 +12,7 @@ Description
 -----------
 
 This program handles ``ctap.MakeCredential`` qrexec call.
+This is a backward compatible equivalent to old ``u2f.Register``.
 
 Options
 -------

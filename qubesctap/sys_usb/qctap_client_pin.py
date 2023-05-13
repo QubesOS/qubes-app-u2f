@@ -23,8 +23,8 @@
 import asyncio
 import sys
 
-from qubesu2f import sys_usb
-from qubesu2f.sys_usb.mux import mux
+from qubesctap import sys_usb
+from qubesctap.sys_usb.mux import mux
 # pylint: disable=duplicate-code
 
 def main():

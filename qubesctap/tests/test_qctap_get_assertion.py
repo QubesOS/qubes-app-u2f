@@ -22,8 +22,8 @@ import sys
 
 import pytest
 
-from qubesu2f.sys_usb import qctap_get_assertion
-from qubesu2f.tests.conftest import mocked_stdio, get_qrexec_arg, get_request
+from qubesctap.sys_usb import qctap_get_assertion
+from qubesctap.tests.conftest import mocked_stdio, get_qrexec_arg, get_request
 
 
 @pytest.mark.parametrize(
