@@ -29,10 +29,8 @@ import os
 import pathlib
 import sys
 
-try:
-    import fido2  # pylint: disable=import-error
-except ImportError:
-    import u2flib_host.u2f  # pylint: disable=import-error
+from fido2.hid import CtapHidDevice
+from fido2.ctap1 import Ctap1
 
 from .. import const
 from .. import proto
@@ -59,7 +57,7 @@ async def mux(apdu, stream=None, devices=None, timeout=const.TIMEOUT, *,
     if stream is None:
         stream = sys.stdout.buffer
     if devices is None:
-        devices = u2flib_host.u2f.list_devices()
+        devices = list(CtapHidDevice.list_devices())
     if loop is None:
         loop = asyncio.get_event_loop()
 
@@ -112,18 +110,15 @@ async def _mux(*, apdu, devices, timeout, loop):
 def _mux_device(device, capdu):
     log = logging.getLogger('mux.device')
 
-    try:
-        # pylint: disable=protected-access
-        log.debug('opening device %r', device)
-        device.open()
-        rapdu = device._do_send_apdu(bytes(capdu))
-    finally:
-        device.close()
+    # pylint: disable=protected-access
+    log.debug('opening device %r', device)
+    ctap1dev = Ctap1(device)
+    rapdu = ctap1dev.send_apdu(cla = capdu.cla, ins = capdu.ins, p1 = capdu.p1, p2 = capdu.p2, data = capdu.request_data)
 
     log.debug('rapdu %s', util.hexlify(rapdu))
 
     # pylint: disable=no-member
-    return capdu.APDU_RESPONSE.from_buffer(untrusted_data=rapdu)
+    return capdu.APDU_RESPONSE.from_buffer(untrusted_data=rapdu + const.U2F_SW.NO_ERROR.to_bytes(2, 'big'))
 
 def enum_getter(enum_type):
     '''For use as ``type=`` argument to :class:`argparse.ArgumentParser`'''

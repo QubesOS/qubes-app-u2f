@@ -26,10 +26,8 @@ import os
 import time
 import unittest
 
-try:
-    import fido2  # pylint: disable=import-error
-except ImportError:
-    import u2flib_host.u2f  # pylint: disable=import-error
+from fido2.hid import CtapHidDevice
+from fido2.ctap1 import Ctap1
 
 from .. import const
 from .. import proto
@@ -48,20 +46,21 @@ class TC_10_NoEnforce(unittest.TestCase):
     '''
 
     def transaction(self, capdu, wait_for_users_presence=False):
-        devices = u2flib_host.u2f.list_devices()
+        devices = list(CtapHidDevice.list_devices())
         if len(devices) != 1:
             self.skipTest('found {} devices, but needs exactly 1')
         device = devices[0]
 
         for _ in range(10):  # 10 * 3 s = 30 s
             try:
-                device.open()
+                ctap1dev = Ctap1(device)
                 # pylint: disable=protected-access
                 rapdu = device._do_send_apdu(bytes(capdu))
+                rapdu = ctap1dev.send_apdu(cla = capdu.cla, ins = capdu.ins, p1 = capdu.p1, p2 = capdu.p2, data = capdu.request_data)
             finally:
                 device.close()
 
-            rapdu = capdu.APDU_RESPONSE.from_buffer(untrusted_data=rapdu)
+            rapdu = capdu.APDU_RESPONSE.from_buffer(untrusted_data=rapdu + const.U2F_SW.NO_ERROR.to_bytes(2, 'big'))
 
             try:
                 rapdu.raise_for_sw()

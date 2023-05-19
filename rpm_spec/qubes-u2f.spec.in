@@ -16,7 +16,7 @@ BuildRequires:  make
 BuildRequires:  systemd
 
 Requires:	python%{python3_pkgversion}
-Requires:	(python%{python3_pkgversion}-u2flib-host or python%{python3_pkgversion}-fido2)
+Requires:	python%{python3_pkgversion}-fido2
 
 %description
 Qubes OS U2F proxy
