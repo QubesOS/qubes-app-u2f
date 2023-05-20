@@ -214,6 +214,12 @@ class RequestWrapper(CommunicatWrapper, ABC):
         """
         raise NotImplementedError()
 
+    def trim_allow_list(self, arg):
+        """
+        Remove credentials with different hash than the `arg`.
+        """
+        raise NotImplementedError()
+
     @property
     def name(self) -> str:
         """
@@ -298,6 +304,10 @@ class ApduRequestWrapper(RequestWrapper):
         if not isinstance(self.data, ctap1.Authenticate):
             raise InvalidCommandError()
         return [qrexec_arg(self.data.key_handle)]
+
+    def trim_allow_list(self, arg):
+        """ctap1.Authenticate can transport only one argument"""
+        pass
 
     def execute(self, device) -> ApduResponseWrapper:
         """
@@ -401,6 +411,20 @@ class CborRequestWrapper(RequestWrapper):
             return
         for cred in self.data.allow_list:
             yield qrexec_arg(cred['id'])
+
+    def trim_allow_list(self, arg):
+        """
+        Remove credentials with different hash than the `arg`.
+        """
+        if not isinstance(self.data, ctap2.GetAssertion):
+            raise InvalidCommandError()
+        if self.data.allow_list is None:
+            return
+        allow_list = [cred for cred in self.data.allow_list
+                      if qrexec_arg(cred['id']) == arg]
+        trimed_data_dict = self.data.__dict__
+        trimed_data_dict["allow_list"] = allow_list
+        self.data = ctap2.GetAssertion(**trimed_data_dict)
 
     def execute(self, device) -> ResponseWrapper:
         """

@@ -47,9 +47,10 @@ def main(args=None, mux=default_mux):
     request = RequestWrapper.from_bytes(untrusted_request)
 
     allow_list = list(request.qrexec_args)
-    if (args.credential_id_hash is not None
-            and args.credential_id_hash not in allow_list):
-        return 1
+    if args.credential_id_hash is not None:
+        if args.credential_id_hash not in allow_list:
+            return 1
+        request.trim_allow_list(args.credential_id_hash)
 
     loop.run_until_complete(mux(untrusted_request))
     return 0
