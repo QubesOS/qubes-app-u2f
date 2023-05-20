@@ -25,6 +25,8 @@ Qrexec calls
     On standard input a complete CTAP request (CBOR) command is expected.
     On standard output, CTAP response (CBOR) is returned.
 
+    Disabling this policy is fine only when our device does not support PIN at all. Otherwise, we will still be prompted for a PIN, but the user verification will fail.
+
 Bugs
 ----
 

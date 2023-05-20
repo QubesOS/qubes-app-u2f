@@ -25,6 +25,8 @@ Qrexec calls
     On standard input a complete CTAP request (CBOR) command is expected.
     On standard output, CTAP response (CBOR) is returned.
 
+    Disabling this option essentially disables the entire CTAP2 protocol, while the previous version (U2F) will continue to work without any changes.
+
 Bugs
 ----
 
