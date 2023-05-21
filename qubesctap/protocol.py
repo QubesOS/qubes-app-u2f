@@ -307,7 +307,6 @@ class ApduRequestWrapper(RequestWrapper):
 
     def trim_allow_list(self, arg):
         """ctap1.Authenticate can transport only one argument"""
-        pass
 
     def execute(self, device) -> ApduResponseWrapper:
         """

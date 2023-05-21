@@ -1,3 +1,10 @@
+qubes-ctap (2.0.0) unstable; urgency=medium
+
+  [ Piotr Bartman ]
+  * New version, not fully backward compatible
+  * Migrate to python-fido2
+  * Add support for FIDO2
+
 qubes-u2f (1.2.10) unstable; urgency=medium
 
   [ Marek Marczykowski-Górecki ]
