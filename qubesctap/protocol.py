@@ -439,7 +439,8 @@ class CborRequestWrapper(RequestWrapper):
             ctap = Ctap1(device)
             expected_err = ApduError
             wrapper = ApduResponseWrapper
-            logging.getLogger('ctap').debug("Execute CTAP1 request")
+            logging.getLogger('ctap').warning(
+                "Device do not support CTAP2, trying execute CTAP1 request")
         # pylint: disable=broad-except
         try:
             response = self.data.execute(ctap)
