@@ -432,26 +432,22 @@ class CborRequestWrapper(RequestWrapper):
         try:
             ctap: Union[Ctap1, Ctap2] = \
                 Ctap2(device)  #fails if device do not support CTAP2
-            expected_err: Type[Exception] = CtapError
-            wrapper: Type = CborResponseWrapper
             logging.getLogger('ctap').debug("Execute CTAP2 request")
         except (ValueError, CtapError):
-            ctap = Ctap1(device)
-            expected_err = ApduError
-            wrapper = ApduResponseWrapper
             logging.getLogger('ctap').warning(
                 "Device do not support CTAP2, trying execute CTAP1 request")
+            return ApduResponseWrapper(ApduError(APDU.WRONG_DATA))
         # pylint: disable=broad-except
         try:
             response = self.data.execute(ctap)
-        except expected_err as err:
+        except CtapError as err:
             response = err
         except Exception as err:
             logging.getLogger('ctap').error(
                 "Unexpected response error: %s", err)
             response = CtapError(1)
 
-        return wrapper(response)
+        return CborResponseWrapper(response)
 
     def to_bytes(self) -> bytes:
         """
