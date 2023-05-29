@@ -24,11 +24,11 @@ This implements [FIDO 2][FIDO2] with [HID encapsulation][CTAPHID].
 The guide assumes there is `sys-usb` qube which holds the USB Host PCI device
 and the qube which holds the browser (or other CTAP client) is named `work`.
 
-1. In `debian-11` (TODO):
+1. In `debian-11`:
 ```
 sudo apt install qubes-ctap
 ```
-1. In `fedora-36`:
+1. In `fedora-38`:
 ```
 sudo dnf install qubes-ctap
 ```
@@ -41,14 +41,14 @@ qvm-service --enable work qubes-ctap-proxy
 ### Advanced: per-qube access enforced by policy
 
 In `dom0`, create a file
-`/etc/qubes-rpc/policy/policy.RegisterArgument+ctap.GetAssertion` with the
+`/etc/qubes-rpc/policy/policy.RegisterArgument+u2f.Authenticate` with the
 following content:
 
 ```
 sys-usb $anyvm allow,target=dom0
 ```
 
-Then truncate `/etc/qubes-rpc/policy/ctap.GetAssertion` to 0 bytes and register
+Then truncate `/etc/qubes-rpc/policy/u2f.Authenticate` to 0 bytes and register
 your token. After doing this, any qube will have access only to tokens enrolled
 using that particular qube. Also, any previously registered token will not work.
 

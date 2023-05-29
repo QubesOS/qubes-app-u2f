@@ -19,7 +19,7 @@ Requires:	python%{python3_pkgversion}
 Requires:	python%{python3_pkgversion}-fido2
 
 Obsoletes: qubes-u2f
-Provides: qubes-u2f = %{version}
+Provides: qubes-ctap = %{version}
 
 %description
 Qubes OS CTAP proxy
@@ -59,8 +59,8 @@ make -C Documentation install \
 %{_bindir}/qctap-*
 %{_sysconfdir}/qubes-rpc/ctap.ClientPin
 %{_sysconfdir}/qubes-rpc/ctap.GetInfo
-%{_sysconfdir}/qubes-rpc/ctap.MakeCredential
-%{_sysconfdir}/qubes-rpc/ctap.GetAssertion
+%{_sysconfdir}/qubes-rpc/u2f.Register
+%{_sysconfdir}/qubes-rpc/u2f.Authenticate
 %{_sysconfdir}/qubes/post-install.d/30-qubes-ctap.sh
 
 %{_presetdir}/75-qubes-ctapproxy.preset

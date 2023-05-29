@@ -135,11 +135,11 @@ values are sane.
 Qrexec calls
 ------------
 
-``ctap.MakeCredential``
+``u2f.Register``
     This is the call used for the CTAP_MAKE_CREDENTIA call. It is handled by
     :manpage:`qctap-make-credential(1)`.
 
-``ctap.GetAssertion``
+``u2f.Authenticate``
     This is the call used for the CTAP_GET_ASSERTION call. It is handled by
     :manpage:`qctap-get-assetion(1)`.
 

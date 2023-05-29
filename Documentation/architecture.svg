@@ -728,9 +728,9 @@ in dom0</xhtml:div>
           <xhtml:div
              style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; vertical-align: top; width: 120px; white-space: nowrap; overflow-wrap: normal; text-align: center;">
             <xhtml:div
-               style="display:inline-block;text-align:inherit;text-decoration:inherit;">ctap.MakeCredential<xhtml:br />
+               style="display:inline-block;text-align:inherit;text-decoration:inherit;">u2f.Register<xhtml:br />
 
-ctap.GetAssertion+KEY<xhtml:br />
+u2f.Authenticate+KEY<xhtml:br />
 
 (raw APDUs)</xhtml:div>
           </xhtml:div>
@@ -754,11 +754,11 @@ ctap.GetAssertion+KEY<xhtml:br />
              sodipodi:role="line"
              x="60"
              y="-9"
-             id="tspan114">ctap.MakeCredential</tspan><tspan
+             id="tspan114">u2f.Register</tspan><tspan
              sodipodi:role="line"
              x="60"
              y="6"
-             id="tspan104">ctap.GetAssertion+KEY</tspan><tspan
+             id="tspan104">u2f.Authenticate+KEY</tspan><tspan
              sodipodi:role="line"
              x="60"
              y="21"

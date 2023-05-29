@@ -11,8 +11,8 @@ Synopsis
 Description
 -----------
 
-This program handles ``ctap.MakeCredential`` qrexec call.
-This is a backward compatible equivalent to old ``u2f.Register``.
+This program handles ``u2f.Register`` qrexec call.
+For backward compatibility, the qrexec call name remains unchanged and is the same for both `u2f Register` and `fido2 MakeCredential` requests.
 
 Options
 -------
@@ -22,7 +22,7 @@ None.
 Qrexec calls
 ------------
 
-``ctap.MakeCredential``
+``u2f.Register``
     On standard input a complete CTAP request command (APDU/CBOR) is expected.
     On standard output, CTAP response (APDU/CBOR) is returned.
 

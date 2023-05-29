@@ -11,11 +11,11 @@ Synopsis
 Description
 -----------
 
-This program handles ``ctap.GetAssertion`` qrexec call. As the argument there
+This program handles ``u2f.Authenticate`` qrexec call. As the argument there
 should be first 128 bits of SHA-256 digest over credential ID, as hexadecimal
 digits. The program verifies if it matches the credential ID included in the
 request.
-This is a backward compatible equivalent to old ``u2f.Authenticate``.
+For backward compatibility, the qrexec call name remains unchanged and is the same for both `u2f Authenticate` and `fido2 GetAssertion` requests.
 
 Environment variables
 ---------------------
@@ -28,7 +28,7 @@ Environment variables
 Qrexec calls
 ------------
 
-``ctap.GetAssertion``
+``u2f.Authenticate``
     On standard input a complete CTAP request (APDU/CBOR) command is expected.
     On standard output, CTAP response (APDU/CBOR) is returned.
 

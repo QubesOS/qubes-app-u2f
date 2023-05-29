@@ -27,5 +27,5 @@ make install-policy DESTDIR=$RPM_BUILD_ROOT
 %files
 /etc/qubes-rpc/policy/ctap.ClientPin
 /etc/qubes-rpc/policy/ctap.GetInfo
-/etc/qubes-rpc/policy/ctap.MakeCredential
-/etc/qubes-rpc/policy/ctap.GetAssertion
+/etc/qubes-rpc/policy/u2f.Register
+/etc/qubes-rpc/policy/u2f.Authenticate

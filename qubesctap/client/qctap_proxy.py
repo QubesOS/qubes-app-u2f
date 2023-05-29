@@ -96,7 +96,7 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
     async def handle_fido2_make_credential(self, cbor):
         self.log.getChild('ctap').debug('handle_fido2_make_credential()')
         response = await self.qrexec_transaction(
-            cbor, rpcname='ctap.MakeCredential')
+            cbor, rpcname='u2f.Register')
         return CborResponseWrapper.from_bytes(
             response, expected_type=AttestationResponse)
 
@@ -107,7 +107,7 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
             # pylint: disable=broad-except
             try:
                 response = await self.qrexec_transaction(
-                    cbor, rpcname=f'ctap.GetAssertion+{qrexec_arg}')
+                    cbor, rpcname=f'u2f.Authenticate+{qrexec_arg}')
                 return CborResponseWrapper.from_bytes(
                     response, expected_type=AssertionResponse)
             except Exception as err:
@@ -118,19 +118,19 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
     async def handle_u2f_register(self, apdu):
         self.log.getChild('ctap').debug('handle_u2f_register()')
         untrusted_response = await self.qrexec_transaction(
-            apdu, rpcname='ctap.MakeCredential')
+            apdu, rpcname='u2f.Register')
         response = ApduResponseWrapper.from_bytes(
             untrusted_response, expected_type=RegistrationData)
         if response.is_ok:
             self.log.getChild('qrexec').warning(
-                'successfully registered; ctap.GetAssertion+%s',
+                'successfully registered; u2f.Authenticate+%s',
                 response.qrexec_arg)
         return response
 
     async def handle_u2f_authenticate(self, apdu):
         self.log.getChild('ctap').debug('handle_u2f_authenticate()')
         untrusted_response = await self.qrexec_transaction(
-            apdu, rpcname=f'ctap.GetAssertion+{tuple(apdu.qrexec_args)[0]}')
+            apdu, rpcname=f'u2f.Authenticate+{tuple(apdu.qrexec_args)[0]}')
         response = ApduResponseWrapper.from_bytes(
             untrusted_response, expected_type=SignatureData)
         return response

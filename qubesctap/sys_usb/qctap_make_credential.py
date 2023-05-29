@@ -18,7 +18,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-"""Qrexec call: ctap.MakeCredential"""
+"""Qrexec call: u2f.Register"""
 
 import asyncio
 import logging
@@ -31,7 +31,7 @@ from qubesctap.sys_usb.mux import mux as default_mux
 
 
 def main(mux=default_mux):
-    """Main routine of ``ctap.MakeCredential`` qrexec call"""
+    """Main routine of ``u2f.Register`` qrexec call"""
 
     sys_usb.setup_logging()
     loop = asyncio.get_event_loop()
@@ -40,7 +40,7 @@ def main(mux=default_mux):
 
     try:
         loop.run_until_complete(qrexec_register_argument(
-            'ctap.GetAssertion', response.qrexec_arg))
+            'u2f.Authenticate', response.qrexec_arg))
     except InvalidCommandError:
         pass
 

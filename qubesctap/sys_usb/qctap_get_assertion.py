@@ -18,7 +18,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-"""Qrexec call: ctap.GetAssertion"""
+"""Qrexec call: u2f.Authenticate"""
 
 import argparse
 import asyncio
@@ -36,7 +36,7 @@ parser.add_argument('credential_id_hash', metavar='QREXEC_SERVICE_ARGUMENT',
 
 
 def main(args=None, mux=default_mux):
-    """Main routine of ``ctap.MakeCredential`` qrexec call"""
+    """Main routine of ``u2f.Register`` qrexec call"""
 
     args = parser.parse_args(args)
     sys_usb.setup_logging()

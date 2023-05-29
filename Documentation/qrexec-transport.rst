@@ -8,8 +8,8 @@ in qrexec. It can be viewed as another method like the most common HID transport
 The calls
 ---------
 
-* ``ctap.MakeCredential``
-* ``ctap.GetAssertion+CREDID``
+* ``u2f.Register``
+* ``u2f.Authenticate+CREDID``
 * ``ctap.GetInfo``
 * ``ctap.ClientPin``
 * ``ctap.vnd.VENDOR.COMMAND``
