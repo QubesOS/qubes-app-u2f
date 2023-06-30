@@ -24,11 +24,12 @@ import sys
 
 from fido2.ctap import CtapError
 from fido2.ctap1 import ApduError, RegistrationData, SignatureData
-from fido2.ctap2 import AttestationResponse, AssertionResponse, Info
+from fido2.ctap2 import AttestationResponse, AssertionResponse
 
 from qubesctap import ctap2
 from qubesctap.ctap1 import Register, Authenticate
-from qubesctap.ctap2 import MakeCredential, GetAssertion, GetInfo, ClientPIN
+from qubesctap.ctap2 import MakeCredential, GetAssertion, GetInfo, ClientPIN,\
+    Info
 from qubesctap.protocol import InvalidRequest, RequestWrapper, \
     ApduResponseWrapper, CborResponseWrapper
 

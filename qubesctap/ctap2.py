@@ -26,14 +26,13 @@
         (June 21, 2022)
 """
 from dataclasses import dataclass, fields, Field
-from typing import Optional, Any, Mapping, List, Iterable, Hashable, \
-    Dict
+from typing import Optional, Any, Mapping, List, Iterable, Hashable, Dict
 
 from fido2 import cbor
 from fido2.ctap import CtapError
-from fido2.ctap2.base import Ctap2, Info, args, _CborDataObject, \
+from fido2.ctap2.base import Ctap2, args, _CborDataObject, \
     AttestationResponse, AssertionResponse
-from fido2.webauthn import PublicKeyCredentialRpEntity
+from fido2.webauthn import PublicKeyCredentialRpEntity, Aaguid
 
 from qubesctap.util import qrexec_arg
 
@@ -139,6 +138,91 @@ class Ctap2RequestRegister:
         return add_to_dict
 
 
+@dataclass(eq=False, frozen=True)
+class Info(Ctap2Dataclass):
+    """
+    FIDO2 transport protocol response for GetInfo.
+
+    Represents the response containing information about the device.
+    It bases on fido2.ctap2.base.Info, but we want more optional fields
+    according to protocol specification.
+
+    Attributes:
+    -----------
+    versions: List[str]
+        List of supported FIDO2 protocol versions.
+    extensions: Optional[List[str]]
+        List of supported FIDO2 extensions.
+    aaguid: fido2.webauthn.Aaguid
+        Authenticator Attestation GUID.
+    options: Optional[Dict[str, bool]]
+        Dictionary of additional options and their boolean values.
+    max_msg_size: Optional[int]
+        Maximum message size supported by the authenticator.
+    pin_uv_protocols: Optional[List[int]]
+        List of supported PIN/UV protocols. MUST NOT contain duplicate values
+        nor be empty if present.
+    max_creds_in_list: Optional[int]
+        Maximum number of credentials in the authenticator list.  MUST be
+        greater than zero if present.
+    max_cred_id_length: Optional[int]
+        Maximum length of a credential ID.  MUST be greater than zero
+        if present.
+    transports: Optional[List[str]]
+        List of supported transports. The list MUST NOT include duplicate values
+         nor be empty if present.
+    algorithms: Optional[List[Dict[str, Any]]]
+        List of supported algorithms. The list MUST NOT include duplicate values
+         nor be empty if present.
+    max_large_blob: Optional[int]
+        Maximum size in bytes of a large blob.
+    force_pin_change: Optional[bool]
+        Indicates if PIN change is enforced.
+    min_pin_length: Optional[int]
+        Minimum required PIN length.
+    firmware_version: Optional[int]
+        Firmware version of the authenticator.
+    max_cred_blob_length: Optional[int]
+        Maximum length of a credential blob. If present, this value MUST be
+        at least 32 bytes.
+    max_rpids_for_min_pin: Optional[int]
+        Maximum number of relying parties for minimum PIN length.
+    preferred_platform_uv_attempts: Optional[int]
+        Preferred number of user verification attempts for platform.
+    uv_modality: Optional[int]
+        User verification modality supported by the authenticator.
+    certifications: Optional[Dict]
+        Dictionary of certifications and their details.
+    remaining_disc_creds: Optional[int]
+        Remaining number of discoverable credentials.
+    vendor_prototype_config_commands: Optional[List[int]]
+        List of vendor-specific prototype config commands.
+    """
+    # pylint: disable=invalid-name,too-many-instance-attributes
+
+    versions: List[str]
+    extensions: Optional[List[str]]
+    aaguid: Aaguid
+    options: Optional[Dict[str, bool]] = None
+    max_msg_size: Optional[int] = None
+    pin_uv_protocols: Optional[List[int]] = None
+    max_creds_in_list: Optional[int] = None
+    max_cred_id_length: Optional[int] = None
+    transports: Optional[List[str]] = None
+    algorithms: Optional[List[Dict[str, Any]]] = None
+    max_large_blob: Optional[int] = None
+    force_pin_change: Optional[bool] = None
+    min_pin_length: Optional[int] = None
+    firmware_version: Optional[int] = None
+    max_cred_blob_length: Optional[int] = None
+    max_rpids_for_min_pin: Optional[int] = None
+    preferred_platform_uv_attempts: Optional[int] = None
+    uv_modality: Optional[int] = None
+    certifications: Optional[Dict] = None
+    remaining_disc_creds: Optional[int] = None
+    vendor_prototype_config_commands: Optional[List[int]] = None
+
+
 @Ctap2RequestRegister.add(Ctap2.CMD.GET_INFO)
 @dataclass(eq=False, frozen=True)
 class GetInfo(Ctap2Request):
@@ -154,7 +238,9 @@ class GetInfo(Ctap2Request):
         Sends the CMD.GET_INFO command to the device and returns the response
         as an `Info` object.
         """
-        response = Info.from_dict(ctap.send_cbor(Ctap2.CMD.GET_INFO))
+
+        response: Info = Info.from_dict(
+            ctap.send_cbor(Ctap2.CMD.GET_INFO)) # type: ignore
         return response
 
 

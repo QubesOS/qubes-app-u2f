@@ -18,7 +18,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-"""Qrexec call: ctap2.Pin"""
+"""Qrexec call: ctap.ClientPin"""
 
 import asyncio
 import sys
@@ -28,7 +28,7 @@ from qubesctap.sys_usb.mux import mux
 # pylint: disable=duplicate-code
 
 def main():
-    """Main routine of ``ctap2.Pin`` qrexec call"""
+    """Main routine of ``ctap.ClientPin`` qrexec call"""
 
     sys_usb.setup_logging()
     loop = asyncio.get_event_loop()
