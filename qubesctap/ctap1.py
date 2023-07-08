@@ -47,6 +47,15 @@ class U2F_AUTH(enum.IntEnum):
     NO_ENFORCE = 0x08
 
 
+class PrintableApduError(ApduError):
+    def __str__(self) -> str:
+        try:
+            error_str = APDU(self.code).name
+        except ValueError:
+            error_str = f"{format(self.code, '#x')} {self.data.decode()}"
+        return error_str
+
+
 class CommandAPDUMeta(type):
     """Metaclass for :class:`CommandAPDU`"""
     _known_ins: dict = {}

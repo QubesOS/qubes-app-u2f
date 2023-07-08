@@ -19,6 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
 # USA.
 import pytest
+from fido2.ctap1 import ApduError, APDU
 
 from qubesctap.protocol import ApduResponseWrapper, CborResponseWrapper, \
     InvalidCommandError, RequestWrapper
@@ -66,6 +67,15 @@ def test_cbor_response_wrapper(action):
     except InvalidCommandError:
         if action == 'MakeCredential':
             raise
+
+def test_cbor_response_wrapper_apdu_response():
+    raw_response = bytes(ApduResponseWrapper(ApduError(APDU.WRONG_DATA)))
+    response = CborResponseWrapper.from_bytes(
+        raw_response, expected_type=get_response_class("GetInfo"))
+    actual = bytes(response)
+
+    assert not response.is_ok
+    assert actual[0] == raw_response[0]
 
 
 @pytest.mark.parametrize(

@@ -274,7 +274,7 @@ class ApduResponseWrapper(ResponseWrapper, ABC):
         status = struct.unpack(">H", untrusted_data[-2:])[0]
         data = untrusted_data[:-2]
         if status != APDU.OK:
-            error = ApduError(status, data)
+            error = ctap1.PrintableApduError(status, data)
             logging.getLogger('ctap').warning("APDU error: %s", str(error))
             return ApduResponseWrapper(error)
         # pylint: disable=broad-except
@@ -373,12 +373,10 @@ class CborResponseWrapper(ResponseWrapper):
 
         If `expected_type` is not given return wrapped `CtapError`.
         """
-        status = untrusted_data[0]
+        status, enc = untrusted_data[0], untrusted_data[1:]
         if status != 0x00:
-            raise CtapError(status)
-        enc = untrusted_data[1:]
-        if not enc:
-            return CborResponseWrapper(CtapError(CtapError.ERR.INVALID_COMMAND))
+            return CborResponseWrapper(CtapError(status))
+
         # pylint: disable=broad-except
         try:
             decoded = cbor.decode(enc)
