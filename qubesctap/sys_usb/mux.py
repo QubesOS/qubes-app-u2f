@@ -31,7 +31,7 @@ from fido2.ctap1 import APDU, ApduError
 from fido2.hid import CtapHidDevice
 
 from qubesctap import const
-from qubesctap.protocol import RequestWrapper, ResponseWrapper
+from qubesctap.protocol import RequestWrapper, ApduResponseWrapper
 
 
 async def mux(
@@ -78,8 +78,8 @@ async def _mux(*, untrusted_request, devices, timeout, loop):
     if not pending:
         # no device plugged -- send a response as if the device wasn't touched,
         # but log a fat message, so there is a chance to debug it...
-        log.warning('no device, sending fake CONDITIONS_NOT_SATISFIED')
-        return ResponseWrapper(ApduError(APDU.USE_NOT_SATISFIED))
+        log.warning('no device, sending fake USE_NOT_SATISFIED')
+        return ApduResponseWrapper(ApduError(APDU.USE_NOT_SATISFIED))
 
     response = None
     while pending:
