@@ -24,6 +24,7 @@ import asyncio
 import logging
 import logging.handlers
 import sys
+import time
 
 from fido2.client import _ctap2client_err
 from fido2.ctap import CtapError
@@ -31,11 +32,11 @@ from fido2.ctap1 import APDU, ApduError
 from fido2.hid import CtapHidDevice
 
 from qubesctap import const
-from qubesctap.protocol import RequestWrapper, ApduResponseWrapper
+from qubesctap.protocol import RequestWrapper, CborResponseWrapper
 
 
 async def mux(
-        untrusted_request, stream=None, devices=None, timeout=const.TIMEOUT,
+        untrusted_request, stream=None, devices=None, timeout=const.DEVICE_TIMEOUT,
         *, loop=None):
     """Send request (APDU/CBOR) to all discovered devices
     and return one response.
@@ -47,20 +48,29 @@ async def mux(
 
     If no devices, return :py:obj:`None`.
     """
-
     if stream is None:
         stream = sys.stdout.buffer
-    if devices is None:
-        devices = list(CtapHidDevice.list_devices())
     if loop is None:
         loop = asyncio.get_event_loop()
 
-    response = await _mux(
-        untrusted_request=untrusted_request,
-        devices=devices,
-        timeout=timeout,
-        loop=loop
-    )
+    fuse = const.USER_TIMEOUT
+    for _ in range(fuse):
+        if devices is None:
+            _devices = list(CtapHidDevice.list_devices())
+        else:
+            _devices = devices
+        response = await _mux(
+            untrusted_request=untrusted_request,
+            devices=_devices,
+            timeout=timeout,
+            loop=loop
+        )
+        if response is not None:
+            break
+        time.sleep(1)
+    else:
+        logging.getLogger('mux').warning("timeout: no device detected")
+        response = CborResponseWrapper(CtapError(CtapError.ERR.TIMEOUT))
 
     stream.write(bytes(response))
     stream.close()
@@ -78,8 +88,8 @@ async def _mux(*, untrusted_request, devices, timeout, loop):
     if not pending:
         # no device plugged -- send a response as if the device wasn't touched,
         # but log a fat message, so there is a chance to debug it...
-        log.warning('no device, sending fake USE_NOT_SATISFIED')
-        return ApduResponseWrapper(ApduError(APDU.USE_NOT_SATISFIED))
+        log.debug('no device detected')
+        return None
 
     response = None
     while pending:

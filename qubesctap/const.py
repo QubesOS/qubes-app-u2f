@@ -25,7 +25,8 @@ Constants for CTAP protocol.
 
 import enum
 
-TIMEOUT = 5
+DEVICE_TIMEOUT = 5
+USER_TIMEOUT = 30
 
 HID_FRAME_SIZE = 64
 

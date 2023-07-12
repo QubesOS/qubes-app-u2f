@@ -22,6 +22,7 @@ import asyncio
 from unittest.mock import patch
 
 import pytest
+from fido2.ctap import CtapError
 
 from qubesctap.client import uhid
 from qubesctap.protocol import RequestWrapper
@@ -85,3 +86,17 @@ def test_mux_ctap1(list_devices, action):
     with mocked_stdio():
         response = loop.run_until_complete(mux(bytes(request)))
         assert response.is_ok == (action != "ApduError")
+
+
+@patch('fido2.hid.CtapHidDevice.list_devices')
+@patch('qubesctap.const.USER_TIMEOUT', 1)
+def test_mux_timeout(list_devices):
+    request = get_request("GetInfo")
+    list_devices.return_value = ()
+
+    loop = asyncio.get_event_loop()
+
+    with mocked_stdio():
+        response = loop.run_until_complete(mux(bytes(request)))
+        assert not response.is_ok
+        assert response.data.code == CtapError.ERR.TIMEOUT
