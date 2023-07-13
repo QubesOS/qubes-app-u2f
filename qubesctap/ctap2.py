@@ -111,6 +111,8 @@ class Ctap2Request(Ctap2Dataclass):
         req_type, untrusted_cbor = untrusted_data[0], untrusted_data[1:]
 
         if req_type not in Ctap2RequestRegister.register:
+            if 0x07 <= req_type <= 0x0D:
+                raise TypeError(f"Request code {req_type!r} is not allowed")
             raise TypeError(
                 f"Unknown request type code: {req_type!r}"
                 f" with cbor data: {untrusted_cbor!r}"
