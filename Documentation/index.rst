@@ -1,5 +1,5 @@
 qubes-app-ctap
-=============
+==============
 
 .. toctree::
    :maxdepth: 1

@@ -146,9 +146,9 @@ latex_documents = [
 man_pages = [
     ('manpages/qctap-proxy', 'qctap-proxy',
         'Qubes CTAP proxy daemon', [], 8),
-    ('manpages/qctap-makecredential', 'qctap-makecredential',
+    ('manpages/qctap-make-credential', 'qctap-make-credential',
         'Qubes CTAP_MAKE_CREDEANTIAL qrexec call', [], 1),
-    ('manpages/qctap-getassertion', 'qctap-getassertion',
+    ('manpages/qctap-get-assertion', 'qctap-get-assertion',
         'Qubes CTAP_GET_ASSERTION qrexec call', [], 1),
 ]
 

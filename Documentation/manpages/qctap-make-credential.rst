@@ -1,7 +1,7 @@
 .. program:: qctap-make-credential
 
 :program:`qctap-make-credential` -- CTAP_MAKE_CREDENTIAL qrexec call
-====================================================
+====================================================================
 
 Synopsis
 --------

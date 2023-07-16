@@ -1,7 +1,7 @@
 .. program:: qctap-proxy
 
 :program:`qctap-proxy` -- CTAP proxy daemon
-=========================================
+===========================================
 
 Synopsis
 --------

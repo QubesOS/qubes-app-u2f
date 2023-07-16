@@ -1,7 +1,7 @@
 .. program:: qctap-get-assertion
 
 :program:`qctap-get-assertion` -- CTAP_GET_ASSERTION qrexec call
-============================================================
+================================================================
 
 Synopsis
 --------
