@@ -13,6 +13,9 @@ BuildArch:  noarch
 BuildRequires:  make
 Requires:   qubes-core-dom0
 
+Obsoletes: qubes-u2f-dom0 < 2.0.0
+Provides: qubes-u2f-dom0 = %{version}
+
 %description
 Qubes OS CTAP proxy policy files. On Qubes OS 4.2 the package is empty as the
 global config tool takes care of it.

@@ -24,3 +24,11 @@ Replaces: qubes-u2f (<< 2.0.0)
 Breaks: qubes-u2f (<< 2.0.0)
 Description: Qubes OS CTAP proxy
  A secure forwarder for CTAP messages.
+
+Package: qubes-u2f
+Architecture: all
+Depends:
+ qubes-ctap,
+Description: Transitional package for qubes-ctap
+ The package was renamed to qubes-ctap.
+ This transitional package can be safely removed.
