@@ -14,7 +14,8 @@ BuildRequires:  make
 Requires:   qubes-core-dom0
 
 %description
-Qubes OS CTAP proxy policy files
+Qubes OS CTAP proxy policy files. On Qubes OS 4.2 the package is empty as the
+global config tool takes care of it.
 
 %prep
 %setup -q -n qubes-ctap-%{version}
@@ -22,10 +23,15 @@ Qubes OS CTAP proxy policy files
 %build
 
 %install
+# do not install policy on R4.2 anymore - global config takes care of it
+%if 0%{?fedora} < 37
 make install-policy DESTDIR=$RPM_BUILD_ROOT
+%endif
 
 %files
+%if 0%{?fedora} < 37
 /etc/qubes-rpc/policy/ctap.ClientPin
 /etc/qubes-rpc/policy/ctap.GetInfo
 /etc/qubes-rpc/policy/u2f.Register
 /etc/qubes-rpc/policy/u2f.Authenticate
+%endif
