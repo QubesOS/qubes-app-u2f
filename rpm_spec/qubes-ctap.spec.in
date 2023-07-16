@@ -55,6 +55,7 @@ make -C Documentation install \
 %files
 %doc
 %{_mandir}/man8/qctap-*.8*
+%{_mandir}/man1/qctap-*.1*
 
 %{_bindir}/qctap-*
 %{_sysconfdir}/qubes-rpc/ctap.ClientPin
