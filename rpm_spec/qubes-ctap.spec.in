@@ -93,3 +93,6 @@ make -C Documentation install \
 %{python3_sitelib}/qubesctap/sys_usb/qctap_get_info.py
 %{python3_sitelib}/qubesctap/sys_usb/qctap_make_credential.py
 %{python3_sitelib}/qubesctap/sys_usb/qctap_dump.py
+
+%changelog
+@CHANGELOG@

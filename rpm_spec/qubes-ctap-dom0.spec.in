@@ -38,3 +38,6 @@ make install-policy DESTDIR=$RPM_BUILD_ROOT
 /etc/qubes-rpc/policy/u2f.Register
 /etc/qubes-rpc/policy/u2f.Authenticate
 %endif
+
+%changelog
+@CHANGELOG@
