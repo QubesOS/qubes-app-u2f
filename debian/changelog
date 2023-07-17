@@ -1,9 +1,43 @@
 qubes-ctap (2.0.0) unstable; urgency=medium
 
+  [ Demi Marie Obenour ]
+  * Remove mentions of end-of-life software
+  * Truncate /etc/qubes-rpc/policy/u2f.Authenticate
+
   [ Piotr Bartman ]
-  * New version, not fully backward compatible
-  * Migrate to python-fido2
-  * Add support for FIDO2
+  * migration to fido2
+  * migration to fido2: CI
+  * migration to fido2: simplyfy from_bytes
+  * migration to fido2: fido2 in ci/requirements
+  * migration to fido2: mypy
+  * migration to fido2: drops deprecated package 'distutils.version'
+  * migration to fido2: renaming
+  * migration to fido2: add docs
+  * migration to fido2: trim allowlist
+  * migration to fido2: update architecture
+  * migration to fido2: pylint + changelog update
+  * migration to fido2: change the message to more informative
+  * migration to fido2: just raise error for CTAP2 request for CTAP1
+    device
+  * migration to fido2: backward compatible policies names
+  * migration to fido2: backward compatible service running
+  * migration to fido2: fix compatibility for legacy devices
+  * migration to fido2: fix NotImplementedError when there is no device
+  * migration to fido2: wait for the user to insert the key
+  * migration to fido2: better error message
+
+  [ Marek Marczykowski-Górecki ]
+  * Fix documentation formatting
+  * Update policy files to new keywords
+  * Do not install policy files on R4.2 anymore
+  * Adjust package metadata for clean migration
+  * rpm: include generated changelog
+  * rpm: fix packaging man pages
+
+  [ Piotr Bartman ]
+  * handle disabled ctap.ClientPin
+
+ -- Piotr Bartman <prbartman@invisiblethingslab.com>  Mon, 17 Jul 2023 03:10:31 +0200
 
 qubes-u2f (1.2.10) unstable; urgency=medium
 
