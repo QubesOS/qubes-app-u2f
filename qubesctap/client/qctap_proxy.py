@@ -29,7 +29,7 @@ import logging
 import signal
 
 from fido2.ctap1 import APDU, ApduError, RegistrationData, SignatureData
-from fido2.ctap2 import AssertionResponse, AttestationResponse, Info
+from fido2.ctap2 import AssertionResponse, AttestationResponse, Ctap2
 
 from qubesctap.protocol import ApduResponseWrapper, CborResponseWrapper, \
     RequestWrapper
@@ -62,7 +62,7 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
         stdout, stderr = await qrexec_client.communicate(bytes(request))
 
         if qrexec_client.returncode == 126:
-            # qrexec was denied by policy; return CONDITIONS_NOT_SATISFIED and
+            # qrexec was denied by policy; return USE_NOT_SATISFIED and
             # let the browser time out
             self.log.getChild('qrexec').warning('qrexec call was denied: '
                 'vmname %s rpcname %s returncode %d',
@@ -84,7 +84,46 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
         self.log.getChild('ctap').debug('handle_fido2_get_info()')
         response = await self.qrexec_transaction(
             cbor, rpcname='ctap.GetInfo')
-        return CborResponseWrapper.from_bytes(response, expected_type=Info)
+        wrapped_resp = CborResponseWrapper.from_bytes(
+            response, expected_type=ctap2.Info)
+        if not await self._pin_allowed():
+            self._modify_info(wrapped_resp)
+        return wrapped_resp
+
+    async def _pin_allowed(self):
+        """
+        Test if RPC `ctap.ClientPin` is allowed
+        """
+        try:
+            # try to send some info
+            _ = await self.qrexec_transaction(
+                RequestWrapper.from_bytes(chr(Ctap2.CMD.GET_INFO).encode()),
+                rpcname='ctap.ClientPin'
+            )
+        except ApduError as err:
+            if err.code == APDU.USE_NOT_SATISFIED:
+                self.log.getChild('ctap').info('ctap.ClientPin disabled')
+                return False
+            raise
+        return True
+
+    def _modify_info(self, wrapped_resp):
+        """
+        Remove the list of supported PIN protocols.
+
+        This way, if the `ctap.ClientPin` RPC is disabled, the client will be
+        aware of it and won't prompt for a PIN during authentication,
+        which would otherwise result in a timeout.
+        """
+        # copy values of immutable Info object
+        resp_dict = {key: wrapped_resp.data[key] for key in wrapped_resp.data}
+        # do a job
+        del resp_dict[0x06]
+        # construct new immutable Info object
+        _data = ctap2.Info.from_dict(resp_dict)
+        # replace data in wrapper
+        wrapped_resp.data = _data
+
 
     async def handle_fido2_client_pin(self, cbor):
         self.log.getChild('ctap').debug('handle_fido2_client_pin()')

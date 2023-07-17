@@ -33,14 +33,14 @@ from typing import Mapping, Optional, Union, Any, Iterable, Type
 from fido2 import cbor
 from fido2.ctap import CtapError
 from fido2.ctap1 import Ctap1, RegistrationData, SignatureData, APDU, ApduError
-from fido2.ctap2 import Ctap2, AssertionResponse, AttestationResponse, Info
+from fido2.ctap2 import Ctap2, AssertionResponse, AttestationResponse
 
 from qubesctap import ctap1, ctap2
 from qubesctap.util import qrexec_arg, int_to_bytes
 
 CTAP1_ACCEPTABLE_RESPONSES = (RegistrationData, SignatureData)
-CTAP2_ACCEPTABLE_RESPONSES = (AssertionResponse, AttestationResponse, Info,
-                              ctap2.ClientPINResponse)
+CTAP2_ACCEPTABLE_RESPONSES = (AssertionResponse, AttestationResponse,
+                              ctap2.Info, ctap2.ClientPINResponse)
 
 
 class InvalidRequest:
