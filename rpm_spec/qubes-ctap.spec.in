@@ -11,6 +11,7 @@ Source0:    %{name}-%{version}.tar.gz
 BuildArch:  noarch
 BuildRequires:	python%{python3_pkgversion}-devel
 BuildRequires:	python%{python3_pkgversion}-sphinx
+BuildRequires:	python%{python3_pkgversion}-setuptools
 %{?systemd_requires}
 BuildRequires:  make
 BuildRequires:  systemd
