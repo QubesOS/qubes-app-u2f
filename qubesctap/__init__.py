@@ -5,6 +5,6 @@ of CTAP HID device as frontend and operating one from backend.
 """
 
 # keep this parseable by distutils.version.StrictVersion
-__version__ = '2.0.0'
+__version__ = '2.0.1'
 __author__ = 'Piotr Bartman <prbartman@invisiblethingslab.com> ' \
              'Wojtek Porczyk <woju@invisiblethingslab.com>'
