@@ -2,6 +2,12 @@ host:
   rpm:
     build:
     - rpm_spec/qubes-ctap-dom0.spec
+vm-bullseye:
+  deb:
+    build: []
+vm-buster:
+  deb:
+    build: []
 vm:
   rpm:
     build:
