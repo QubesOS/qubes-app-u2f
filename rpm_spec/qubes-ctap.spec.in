@@ -18,6 +18,7 @@ BuildRequires:  systemd
 
 Requires:	python%{python3_pkgversion}
 Requires:	python%{python3_pkgversion}-fido2
+Requires:	python%{python3_pkgversion}-packaging
 
 Obsoletes: qubes-u2f < 2.0.0
 Provides: qubes-u2f = %{version}
