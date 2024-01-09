@@ -1,3 +1,13 @@
+qubes-ctap (2.0.5) unstable; urgency=medium
+
+  [ Yanase Yuki ]
+  * rpm: add python3-packaging to Requires
+
+  [ Ben Grande ]
+  * debian: require python3-packaging
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 09 Jan 2024 20:45:00 +0100
+
 qubes-ctap (2.0.4) unstable; urgency=medium
 
   * Advertise both qubes-ctap-proxy and qubes-u2f-proxy
