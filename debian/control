@@ -18,6 +18,7 @@ Package: qubes-ctap
 Architecture: all
 Depends:
  python3-fido2 (>= 1.0.0),
+ python3-packaging,
  ${python3:Depends},
  ${misc:Depends}
 Replaces: qubes-u2f (<< 2.0.0)
