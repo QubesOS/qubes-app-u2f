@@ -27,6 +27,7 @@ import functools
 import itertools
 import logging
 import signal
+import platform
 
 from fido2.ctap1 import APDU, ApduError, RegistrationData, SignatureData
 from fido2.ctap2 import AssertionResponse, AttestationResponse, Ctap2
@@ -39,6 +40,10 @@ from qubesctap import util
 from qubesctap.util import int_to_bytes
 
 
+class ArgumentError(RuntimeError):
+    pass
+
+
 class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
     """U2DHIDDevice proxied over qrexec"""
     qrexec_client = const.QREXEC_CLIENT
@@ -48,7 +53,12 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
         if name is None:
             name = f'Qubes OS CTAP proxy to {vmname}'
         super().__init__(name=name, **kwargs)
+        if platform.node() == vmname:
+            raise ArgumentError(
+                f"Can't proxy CTAP messages circularly {vmname}->{vmname}. "
+                "Exiting.")
         self.vmname = vmname
+
 
     async def qrexec_transaction(self, request: RequestWrapper, rpcname: str):
         """Execute one transaction over qrexec"""
