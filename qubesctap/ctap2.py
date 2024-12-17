@@ -26,7 +26,8 @@
         (June 21, 2022)
 """
 from dataclasses import dataclass, fields, Field
-from typing import Optional, Any, Mapping, List, Iterable, Hashable, Dict
+from typing import Optional, Any, Mapping, List, Iterable, Dict, overload
+from collections.abc import Hashable
 
 from fido2 import cbor
 from fido2.ctap import CtapError
@@ -47,10 +48,18 @@ class Ctap2Dataclass(_CborDataObject):
     def _get_field_key(cls, field: Field) -> int:
         return fields(cls).index(field) + 1
 
+    @overload
+    @classmethod
+    def from_dict(cls, data: None) -> None: ...
+
+    @overload
+    @classmethod
+    def from_dict(cls, data: Mapping[int, Any]) -> "Ctap2Dataclass": ...
+
     @classmethod
     def from_dict(
             cls, data: Optional[Mapping[int, Any]]
-    ) -> "Ctap2Dataclass":
+    ) -> Optional["Ctap2Dataclass"]:
         """
         Creates an instance of Ctap2Dataclass from a dictionary.
 

@@ -329,8 +329,8 @@ class UHIDDevice:
     # (function `get_device_string` in both cases).
     bus = BUS.BLUETOOTH
 
-    def __init__(self, name=None, serial=None, vendor=None, product=None,
-            version=None, bus=None, phys=None, country=None, rdesc=None, *,
+    def __init__(self, *, name=None, serial=None, vendor=None, product=None,
+            version=None, bus=None, phys=None, country=None, rdesc=None,
             loop=None):
         # pylint: disable=too-many-arguments
         self.log = logging.getLogger(type(self).__name__)

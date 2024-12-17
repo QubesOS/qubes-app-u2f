@@ -419,9 +419,10 @@ class CborRequestWrapper(RequestWrapper):
             return
         allow_list = [cred for cred in self.data.allow_list
                       if qrexec_arg(cred['id']) == arg]
-        trimed_data_dict = self.data.__dict__
-        trimed_data_dict["allow_list"] = allow_list
-        self.data = ctap2.GetAssertion(**trimed_data_dict)
+        trimmed_data_dict = {k: v for k, v in self.data.__dict__.items()
+                             if not k.startswith("_")}
+        trimmed_data_dict["allow_list"] = allow_list
+        self.data = ctap2.GetAssertion(**trimmed_data_dict)
 
     def execute(self, device) -> ResponseWrapper:
         """

@@ -41,7 +41,7 @@ from qubesctap.util import int_to_bytes
 
 
 class ArgumentError(RuntimeError):
-    pass
+    """Wrong arguments"""
 
 
 class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):

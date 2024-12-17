@@ -1,16 +1,16 @@
 include:
-- file: /r4.1/gitlab-base.yml
-  project: QubesOS/qubes-continuous-integration
-- file: /r4.1/gitlab-dom0.yml
-  project: QubesOS/qubes-continuous-integration
-- file: /r4.1/gitlab-vm.yml
-  project: QubesOS/qubes-continuous-integration
 - file: /r4.2/gitlab-base.yml
-  project: QubesOS/qubes-continuous-integration
+  project: qubesos/qubes-continuous-integration
 - file: /r4.2/gitlab-host.yml
-  project: QubesOS/qubes-continuous-integration
+  project: qubesos/qubes-continuous-integration
 - file: /r4.2/gitlab-vm.yml
-  project: QubesOS/qubes-continuous-integration
+  project: qubesos/qubes-continuous-integration
+- file: /r4.3/gitlab-base.yml
+  project: qubesos/qubes-continuous-integration
+- file: /r4.3/gitlab-host.yml
+  project: qubesos/qubes-continuous-integration
+- file: /r4.3/gitlab-vm.yml
+  project: qubesos/qubes-continuous-integration
 
 checks:tests:
   stage: checks
@@ -18,7 +18,7 @@ checks:tests:
     PYTEST_ADDOPTS: "--color=yes"
   before_script: &before-script
     - "PATH=$PATH:$HOME/.local/bin"
-    - sudo dnf install -y python3-pytest python3-coverage
+    - sudo dnf install -y python3-pytest python3-coverage python3-pip
     - pip3 install --quiet -r ci/requirements.txt
   script:
     - ./run-tests.sh
@@ -28,7 +28,7 @@ checks:tests:
 
 checks:pylint:
   before_script:
-  - sudo dnf install -y python3-mypy
+  - sudo dnf install -y python3-mypy python3-pip
   - pip3 install --quiet -r ci/requirements.txt
   - mypy --install-types --non-interactive
   script:
