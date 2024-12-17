@@ -301,6 +301,8 @@ max-public-methods=20
 # Maximum number of boolean expressions in a if statement
 max-bool-expr=5
 
+max-positional-arguments=7
+
 
 [IMPORTS]
 

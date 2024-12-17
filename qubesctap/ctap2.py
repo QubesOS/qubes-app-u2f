@@ -26,7 +26,8 @@
         (June 21, 2022)
 """
 from dataclasses import dataclass, fields, Field
-from typing import Optional, Any, Mapping, List, Iterable, Hashable, Dict
+from typing import Optional, Any, Mapping, List, Iterable, Dict
+from collections.abc import Hashable
 
 from fido2 import cbor
 from fido2.ctap import CtapError
