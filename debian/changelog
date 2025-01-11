@@ -1,3 +1,23 @@
+qubes-ctap (2.0.6) unstable; urgency=medium
+
+  [ Piotr Bartman-Szwarc ]
+  * forbid circular proxying
+
+  [ Marek Marczykowski-Górecki ]
+  * Adjust for pylint update
+  * Update codecov wrapper
+  * ci: remove R4.1, add R4.3
+
+  [ Piotr Bartman-Szwarc ]
+  * quick fix: do not include protected members of parent class in
+    construction of derived class
+
+  [ Marek Marczykowski-Górecki ]
+  * Adjust type hint
+  * Add missing docstring
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 11 Jan 2025 23:21:50 +0100
+
 qubes-ctap (2.0.5) unstable; urgency=medium
 
   [ Yanase Yuki ]
