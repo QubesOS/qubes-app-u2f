@@ -27,7 +27,6 @@
 """
 from dataclasses import dataclass, fields, Field
 from typing import Optional, Any, Mapping, List, Iterable, Dict, overload
-from collections.abc import Hashable
 
 from fido2 import cbor
 from fido2.ctap import CtapError
@@ -67,7 +66,7 @@ class Ctap2Dataclass(_CborDataObject):
         for the fields in the class.
         """
         assert data is not None
-        kwargs: Dict[Hashable, Any] = \
+        kwargs: Dict[str, Any] = \
             {
                 attr.name: None for attr in fields(cls)
                 if hasattr(attr.type, "__args__")
@@ -84,7 +83,7 @@ class Ctap2Dataclass(_CborDataObject):
         Returns a dictionary representation of the Ctap2Dataclass instance,
         where the keys correspond to the CBOR keys for the fields in the class.
         """
-        # pylint: disable=protected-access)
+        # pylint: disable=protected-access
         result = {}
         cls = self.__class__
         for field in fields(cls):
