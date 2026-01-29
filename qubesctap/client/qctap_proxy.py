@@ -28,6 +28,8 @@ import itertools
 import logging
 import signal
 import platform
+from types import FrameType
+from typing import Optional, Callable
 
 from fido2.ctap1 import APDU, ApduError, RegistrationData, SignatureData
 from fido2.ctap2 import AssertionResponse, AttestationResponse, Ctap2
@@ -254,6 +256,11 @@ parser.add_argument('vmname', metavar='VMNAME',
 
 parser.set_defaults(loglevel=[logging.WARNING])
 
+def _make_signal_handler(on_signal: Callable[[str], None], signame: str):
+    def _handler(_signum: int, _frame: Optional[FrameType]) -> None:
+        on_signal(signame)
+    return _handler
+
 async def main(args=None):
     """Main routine of the proxy daemon"""
     args = parser.parse_args(args)
@@ -297,7 +304,7 @@ async def main(args=None):
         try:
             loop.add_signal_handler(getattr(signal, signame), on_signal, signame)
         except NotImplementedError:
-            signal.signal(getattr(signal, signame), lambda *_: on_signal(signame))
+            signal.signal(getattr(signal, signame), _make_signal_handler(on_signal, signame))
 
     await stop_event.wait()
 

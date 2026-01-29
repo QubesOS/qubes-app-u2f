@@ -33,7 +33,8 @@ import datetime
 import fcntl
 import signal
 import sys
-from typing import Optional
+from types import FrameType
+from typing import Optional, Callable
 
 import qubesctap.client.hid_data
 from qubesctap import const
@@ -222,19 +223,19 @@ class USBMon:
             packet = await self._queue.get()
             self._queue.task_done()
             return packet
-        except asyncio.CancelledError:
+        except asyncio.CancelledError as exc:
             # If the consumer is cancelled, detach
             await self.aclose()
-            raise StopAsyncIteration
+            raise StopAsyncIteration from exc
 
     def _reader(self):
         hdr = _USBMonPacket()
         data = ctypes.create_string_buffer(self.bufsize)
 
         arg = _USBMonGetArg()
-        arg.hdr = ctypes.pointer(hdr)
-        arg.data = ctypes.cast(data, ctypes.c_void_p)
-        arg.alloc = ctypes.sizeof(data)
+        arg.hdr = ctypes.pointer(hdr)  # pylint: disable=attribute-defined-outside-init
+        arg.data = ctypes.cast(data, ctypes.c_void_p)  # pylint: disable=attribute-defined-outside-init
+        arg.alloc = ctypes.sizeof(data)  # pylint: disable=attribute-defined-outside-init
 
         fcntl.ioctl(self.fd, MON_IOCX_GETX, arg)
 
@@ -252,7 +253,7 @@ async def ctap_monitor(bus=0, device=-1):
             async for packet in mon:
                 if 0 <= device != packet.devnum:
                     continue
-                if not (packet.length == packet.len_cap == const.HID_FRAME_SIZE):
+                if not packet.length == packet.len_cap == const.HID_FRAME_SIZE:
                     continue
                 print(packet)
 
@@ -264,8 +265,13 @@ parser.add_argument('--device', '-d', type=int,
     help='USB device number (<0 for all) (default: %(default)d)')
 parser.set_defaults(bus=0, device=-1)
 
+def _make_signal_handler(on_signal: Callable[[str], None], signame: str):
+    def _handler(_signum: int, _frame: Optional[FrameType]) -> None:
+        on_signal(signame)
+    return _handler
 
 async def main_async(args=None):
+    """Main async function."""
     args = parser.parse_args(args)
 
     task = asyncio.create_task(ctap_monitor(args.bus, args.device))
@@ -279,7 +285,7 @@ async def main_async(args=None):
         try:
             loop.add_signal_handler(getattr(signal, signame), on_signal, signame)
         except NotImplementedError:
-            signal.signal(getattr(signal, signame), lambda *_: on_signal(signame))
+            signal.signal(getattr(signal, signame), _make_signal_handler(on_signal, signame))
 
     try:
         await task
@@ -289,8 +295,8 @@ async def main_async(args=None):
 
 
 def main(args=None):
+    """Main function."""
     asyncio.run(main_async(args))
-
 
 if __name__ == '__main__':
     main()

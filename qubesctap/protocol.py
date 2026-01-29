@@ -369,7 +369,7 @@ class CborResponseWrapper(ResponseWrapper):
                 self.data.auth_data.credential_data.credential_id # type: ignore
             )
         raise InvalidCommandError()
-    
+
     @staticmethod
     def from_bytes(untrusted_data: bytes, expected_type=None) -> "CborResponseWrapper":
         status, enc = untrusted_data[0], untrusted_data[1:]
@@ -379,7 +379,8 @@ class CborResponseWrapper(ResponseWrapper):
         # pylint: disable=broad-except
         try:
             decoded = cbor.decode(enc)
-            if isinstance(decoded, Mapping) and expected_type is not None and hasattr(expected_type, "from_dict"):
+            if isinstance(decoded, Mapping) and expected_type is not None \
+                and hasattr(expected_type, "from_dict"):
                 obj = expected_type.from_dict(decoded)
                 return CborResponseWrapper(obj, raw_ok=enc)
         except Exception as err:

@@ -401,7 +401,7 @@ class UHIDDevice:
             version=self.version,
             country=self.country,
             rd=self.rdesc)
-        
+
         self._loop.add_reader(self.fd, self._read_req)
 
     async def close(self):
