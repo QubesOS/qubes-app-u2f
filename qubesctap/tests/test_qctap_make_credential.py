@@ -32,8 +32,7 @@ from qubesctap.tests.conftest import mocked_stdio, get_response
     "action",
     ("MakeCredential", "Register", "CtapError")
 )
-def test_key_handle_match(loop, action):
-    loop.return_value = None
+def test_key_handle_match(_mock_qrexec_register_argument, action):
     response = get_response(action)
 
     async def mux(_input):

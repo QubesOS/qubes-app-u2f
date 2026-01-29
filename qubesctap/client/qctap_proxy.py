@@ -254,49 +254,53 @@ parser.add_argument('vmname', metavar='VMNAME',
 
 parser.set_defaults(loglevel=[logging.WARNING])
 
-async def _sighandler(loop, device):
-    await device.close()
-    loop.stop()
-
-def sighandler(signame, loop, device):
-    """Handle SIGINT/SIGTERM"""
-    print(f'caught {signame}, exiting')
-    asyncio.ensure_future(_sighandler(loop, device), loop=loop)
-
-def main(args=None):
+async def main(args=None):
     """Main routine of the proxy daemon"""
     args = parser.parse_args(args)
     logging.basicConfig(
-        format='%(asctime)s %(name)s %(message)s',
-        filename='/var/log/qubes/qctap',
+        format="%(asctime)s %(name)s %(message)s",
+        filename="/var/log/qubes/qctap",
         level=sum(args.loglevel),
     )
 
-    loop = asyncio.get_event_loop()
+    device = CTAPHIDQrexecDevice(
+        args.vmname,
+        name=args.hid_name,
+        phys=args.hid_phys,
+        serial=args.hid_serial,
+        vendor=args.hid_vendor,
+        product=args.hid_product,
+        version=args.hid_version,
+        bus=args.hid_bus,
+        country=args.hid_country,
+        rdesc=args.hid_rdesc
+    )
 
-    device = CTAPHIDQrexecDevice(args.vmname,
-                                 name=args.hid_name,
-                                 phys=args.hid_phys,
-                                 serial=args.hid_serial,
-                                 vendor=args.hid_vendor,
-                                 product=args.hid_product,
-                                 version=args.hid_version,
-                                 bus=args.hid_bus,
-                                 country=args.hid_country,
-                                 rdesc=args.hid_rdesc,
-                                 loop=loop)
+    await device.open()
+    await util.systemd_notify()
 
-    loop.run_until_complete(device.open())
-    loop.run_until_complete(util.systemd_notify())
+    stop_event = asyncio.Event()
 
-    for signame in ('SIGINT', 'SIGTERM'):
-        loop.add_signal_handler(getattr(signal, signame),
-            sighandler, signame, loop, device)
+    async def shutdown(signame: str):
+        """Async shutdown routine triggered by SIGINT/SIGTERM."""
+        print(f"caught {signame}, exiting")
+        try:
+            await device.close()
+        finally:
+            stop_event.set()
 
-    try:
-        loop.run_forever()
-    finally:
-        loop.close()
+    def on_signal(signame: str):
+        asyncio.create_task(shutdown(signame))
 
-if __name__ == '__main__':
-    main()
+    loop = asyncio.get_running_loop()
+    for signame in ("SIGINT", "SIGTERM"):
+        try:
+            loop.add_signal_handler(getattr(signal, signame), on_signal, signame)
+        except NotImplementedError:
+            signal.signal(getattr(signal, signame), lambda *_: on_signal(signame))
+
+    await stop_event.wait()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

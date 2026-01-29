@@ -18,7 +18,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
 # USA.
-import asyncio
 from unittest.mock import patch
 
 import pytest
@@ -42,7 +41,7 @@ class FakeDevice:
             self.capabilities = 0x00
         self.response = response
 
-    def call(self, cmd, data= b"", event=None, on_keepalive=None) -> bytes:
+    def call(self, cmd, data=b"", event=None, on_keepalive=None) -> bytes:
         request_name = RequestWrapper.from_bytes(data).data.__class__.__name__
         return get_response_bytes(request_name)
 
@@ -55,17 +54,16 @@ class FakeDevice:
     ("GetInfo", "MakeCredential", "GetAssertion", "ClientPIN",
      "Register", "Authenticate", "CtapError", "ApduError")
 )
-def test_mux_ctap2(list_devices, action):
+@pytest.mark.asyncio
+async def test_mux_ctap2(list_devices, action):
     request = get_request(action)
     expected_response = get_response_bytes(action)
     list_devices.return_value = (
         FakeDevice(ctap2=True, response=expected_response),
     )
 
-    loop = asyncio.get_event_loop()
-
     with mocked_stdio():
-        response = loop.run_until_complete(mux(bytes(request)))
+        response = await mux(bytes(request))
         assert response.is_ok == (action not in ("CtapError", "ApduError"))
 
 
@@ -74,29 +72,27 @@ def test_mux_ctap2(list_devices, action):
     "action",
     ("Register", "Authenticate", "ApduError")
 )
-def test_mux_ctap1(list_devices, action):
+@pytest.mark.asyncio
+async def test_mux_ctap1(list_devices, action):
     request = get_request(action)
     expected_response = get_response_bytes(action)
     list_devices.return_value = (
         FakeDevice(ctap2=False, response=expected_response),
     )
 
-    loop = asyncio.get_event_loop()
-
     with mocked_stdio():
-        response = loop.run_until_complete(mux(bytes(request)))
+        response = await mux(bytes(request))
         assert response.is_ok == (action != "ApduError")
 
 
 @patch('fido2.hid.CtapHidDevice.list_devices')
 @patch('qubesctap.const.USER_TIMEOUT', 1)
-def test_mux_timeout(list_devices):
+@pytest.mark.asyncio
+async def test_mux_timeout(list_devices):
     request = get_request("GetInfo")
     list_devices.return_value = ()
 
-    loop = asyncio.get_event_loop()
-
     with mocked_stdio():
-        response = loop.run_until_complete(mux(bytes(request)))
+        response = await mux(bytes(request))
         assert not response.is_ok
         assert response.data.code == CtapError.ERR.TIMEOUT

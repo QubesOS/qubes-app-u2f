@@ -18,8 +18,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
 # USA.
-import asyncio
-
 from unittest.mock import patch
 
 import pytest
@@ -37,21 +35,21 @@ TEST_HID_BUS = uhid.BUS.BLUETOOTH
     "action",
     ("GetInfo", "GetAssertion", "MakeCredential", "ClientPIN"),
 )
-def test_handle_fido2(mock_subprocess, action):
+@pytest.mark.asyncio
+async def test_handle_fido2(mock_subprocess, action):
     expected = get_response_bytes(action)
     mock_subprocess.return_value = FakeQrexecClient(stdout=expected)
 
-    loop = asyncio.get_event_loop()
-
-    device = qctap_proxy.CTAPHIDQrexecDevice('sys-usb',
-                                             name=TEST_HID_NAME,
-                                             bus=TEST_HID_BUS,
-                                             loop=loop)
+    device = qctap_proxy.CTAPHIDQrexecDevice(
+        'sys-usb',
+        name=TEST_HID_NAME,
+        bus=TEST_HID_BUS,
+    )
 
     request = get_request(action)
     handler = getattr(device, "handle_fido2_" + request.name)
-    response = loop.run_until_complete(handler(request))
+    response = await handler(request)
+
     assert isinstance(response.data, get_response_class(action))
     assert response.is_ok
     assert bytes(response) == expected
-

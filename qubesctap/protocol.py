@@ -340,17 +340,24 @@ class CborResponseWrapper(ResponseWrapper):
     """
     CTAP2 response wrapper.
     """
+    def __init__(self, data, raw_ok: Optional[bytes] = None):
+        super().__init__(data)
+        self._raw_ok = raw_ok  # original CBOR bytes (without the status byte)
+
     def to_bytes(self) -> bytes:
         """
-        Converts wrapped CTAP1 response to bytes and adds response code
+        Converts wrapped CTAP2 response to bytes and adds response code
         at the beginning.
         """
-        result = b'\x01'
         if self.is_ok:
-            result = b'\x00' + cbor.encode(self.data)
+            if self._raw_ok is not None:
+                return b'\x00' + self._raw_ok
+            return b'\x00' + cbor.encode(self.data)
+
         if isinstance(self.data, CtapError):
-            result = int_to_bytes(self.data.code)
-        return result
+            return int_to_bytes(self.data.code)
+
+        return b'\x01'
 
     @property
     def qrexec_arg(self) -> str:
@@ -362,17 +369,9 @@ class CborResponseWrapper(ResponseWrapper):
                 self.data.auth_data.credential_data.credential_id # type: ignore
             )
         raise InvalidCommandError()
-
+    
     @staticmethod
-    def from_bytes(
-            untrusted_data: bytes,
-            expected_type = None
-    ) -> "CborResponseWrapper":
-        """
-        Returns wrapped instance of the CTAP2 response from bytes.
-
-        If `expected_type` is not given return wrapped `CtapError`.
-        """
+    def from_bytes(untrusted_data: bytes, expected_type=None) -> "CborResponseWrapper":
         status, enc = untrusted_data[0], untrusted_data[1:]
         if status != 0x00:
             return CborResponseWrapper(CtapError(status))
@@ -380,13 +379,12 @@ class CborResponseWrapper(ResponseWrapper):
         # pylint: disable=broad-except
         try:
             decoded = cbor.decode(enc)
-            expected = cbor.encode(decoded)
-            if expected == enc and isinstance(decoded, Mapping) \
-                    and expected_type is not None \
-                    and hasattr(expected_type, "from_dict"):
-                return CborResponseWrapper(expected_type.from_dict(decoded))
+            if isinstance(decoded, Mapping) and expected_type is not None and hasattr(expected_type, "from_dict"):
+                obj = expected_type.from_dict(decoded)
+                return CborResponseWrapper(obj, raw_ok=enc)
         except Exception as err:
             logging.getLogger('ctap').error("%s", str(err))
+
         return CborResponseWrapper(CtapError(CtapError.ERR.INVALID_COMMAND))
 
     @property
