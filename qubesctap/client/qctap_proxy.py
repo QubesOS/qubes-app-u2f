@@ -261,7 +261,7 @@ def _make_signal_handler(on_signal: Callable[[str], None], signame: str):
         on_signal(signame)
     return _handler
 
-async def main(args=None):
+async def main_async(args=None):
     """Main routine of the proxy daemon"""
     args = parser.parse_args(args)
     logging.basicConfig(
@@ -308,6 +308,9 @@ async def main(args=None):
 
     await stop_event.wait()
 
+def main(args=None):
+    """Main function."""
+    asyncio.run(main_async(args))
 
-if __name__ == "__main__":
-    asyncio.run(main())
+if __name__ == '__main__':
+    main()
