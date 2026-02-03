@@ -379,7 +379,9 @@ class CborResponseWrapper(ResponseWrapper):
         # pylint: disable=broad-except
         try:
             decoded = cbor.decode(enc)
-            if isinstance(decoded, Mapping) and expected_type is not None \
+            expected = cbor.encode(decoded)
+            if expected == enc and isinstance(decoded, Mapping) \
+                and expected_type is not None \
                 and hasattr(expected_type, "from_dict"):
                 obj = expected_type.from_dict(decoded)
                 return CborResponseWrapper(obj, raw_ok=enc)
