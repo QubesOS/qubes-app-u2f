@@ -34,5 +34,9 @@ async def main_async():
     sys_usb.setup_logging()
     await mux(sys.stdin.buffer.read())
 
+def main():
+    """Main function."""
+    asyncio.run(main_async())
+
 if __name__ == '__main__':
     asyncio.run(main_async())

@@ -58,6 +58,5 @@ def main(args=None, mux=default_mux):
     """Main routine of ``u2f.Register`` qrexec call"""
     return asyncio.run(main_async(args, mux))
 
-
 if __name__ == '__main__':
     sys.exit(main())

@@ -293,7 +293,6 @@ async def main_async(args=None):
         # expected on shutdown
         pass
 
-
 def main(args=None):
     """Main function."""
     asyncio.run(main_async(args))

@@ -26,13 +26,15 @@ import sys
 from qubesctap import sys_usb
 from qubesctap.sys_usb.mux import mux
 
-# pylint: disable=duplicate-code
-
 async def main_async():
     """Main async routine of ``ctap.GetInfo`` qrexec call"""
 
     sys_usb.setup_logging()
     await mux(sys.stdin.buffer.read())
+
+def main():
+    """Main routine of ``ctap.GetInfo`` qrexec call"""
+    return asyncio.run(main_async())
 
 if __name__ == '__main__':
     asyncio.run(main_async())
