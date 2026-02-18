@@ -1,3 +1,19 @@
+qubes-ctap (2.0.7) unstable; urgency=medium
+
+  [ 3np ]
+  * mypy type fix: kwargs keys must be str
+
+  [ Alex Mazzariol ]
+  * fix: migrate asyncio-policy pattern usage to newer patterns; fix
+    tests.
+  * fix: pylint issues
+  * fix: test coverage (both patch and overall)
+  * feat: restore CborResponseWrapper from_bytes decode+encode match
+    check
+  * fix: add main() function to console apps
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Wed, 18 Feb 2026 18:57:49 +0100
+
 qubes-ctap (2.0.6) unstable; urgency=medium
 
   [ Piotr Bartman-Szwarc ]
