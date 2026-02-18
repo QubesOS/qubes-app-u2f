@@ -33,7 +33,8 @@ import datetime
 import fcntl
 import signal
 import sys
-from typing import Optional
+from types import FrameType
+from typing import Optional, Callable
 
 import qubesctap.client.hid_data
 from qubesctap import const
@@ -163,101 +164,138 @@ class USBMonPacket:
                 f'{("I" if self.dir_in else "O")} {payload}')
 
 class USBMon:
-    """Async iterator, which yields each packet as it is received."""
+    """Async iterator yielding packets as they are received."""
     packet_class = USBMonPacket
 
-    def __init__(self, fd, bufsize=const.HID_FRAME_SIZE, *, loop=None):
+    def __init__(self, fd, bufsize=const.HID_FRAME_SIZE):
         self.fd = fd
         self.bufsize = bufsize
-        self.loop = loop or asyncio.get_event_loop()
 
-        self.queue: Optional[asyncio.Queue] = asyncio.Queue(32)
-        self.loop.add_reader(self.fd, self._reader)
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._queue: Optional[asyncio.Queue] = asyncio.Queue(32)
+        self._closed = False
+
+    async def start(self) -> "USBMon":
+        """Attach the FD reader to the currently running loop."""
+        if self._closed:
+            raise RuntimeError("USBMon is closed")
+        if self._loop is not None:
+            return self  # already started
+
+        self._loop = asyncio.get_running_loop()
+        self._loop.add_reader(self.fd, self._reader)
+        return self
+
+    async def aclose(self) -> None:
+        """Detach the FD reader and stop iteration."""
+        if self._closed:
+            return
+        self._closed = True
+
+        if self._loop is not None:
+            self._loop.remove_reader(self.fd)
+            self._loop = None
+
+        # Drain queue to allow GC and ensure __anext__ stops quickly
+        if self._queue is not None:
+            while True:
+                try:
+                    self._queue.get_nowait()
+                    self._queue.task_done()
+                except asyncio.QueueEmpty:
+                    break
+            self._queue = None
+
+    async def __aenter__(self) -> "USBMon":
+        return await self.start()
+
+    async def __aexit__(self, exc_type, exc, tb) -> None:
+        await self.aclose()
 
     def __aiter__(self):
         return self
 
     async def __anext__(self):
-        if self.queue is None:
+        if self._queue is None:
             raise StopAsyncIteration()
 
         try:
-            packet = await self.queue.get()
-            self.queue.task_done()
-
-        except asyncio.CancelledError:
-            # pylint: disable=raise-missing-from
-            self.loop.remove_reader(self.fd)
-            while True:
-                try:
-                    self.queue.get_nowait()
-                    self.queue.task_done()
-                except asyncio.QueueEmpty:
-                    break
-            self.queue = None
-
-            raise StopAsyncIteration()
-
-        return packet
+            packet = await self._queue.get()
+            self._queue.task_done()
+            return packet
+        except asyncio.CancelledError as exc:
+            # If the consumer is cancelled, detach
+            await self.aclose()
+            raise StopAsyncIteration from exc
 
     def _reader(self):
         hdr = _USBMonPacket()
         data = ctypes.create_string_buffer(self.bufsize)
 
-        # pylint: disable=attribute-defined-outside-init
         arg = _USBMonGetArg()
-        arg.hdr = ctypes.pointer(hdr)
-        arg.data = ctypes.cast(data, ctypes.c_void_p)
-        arg.alloc = ctypes.sizeof(data)
+        arg.hdr = ctypes.pointer(hdr)  # pylint: disable=attribute-defined-outside-init
+        arg.data = ctypes.cast(data, ctypes.c_void_p)  # pylint: disable=attribute-defined-outside-init
+        arg.alloc = ctypes.sizeof(data)  # pylint: disable=attribute-defined-outside-init
 
         fcntl.ioctl(self.fd, MON_IOCX_GETX, arg)
 
         try:
-            assert self.queue is not None
-            self.queue.put_nowait(self.packet_class(hdr, data))
+            if self._queue is None:
+                return
+            self._queue.put_nowait(self.packet_class(hdr, data))
         except asyncio.QueueFull:
             sys.stderr.write('warning: queue full, dropping packet\n')
 
-
 async def ctap_monitor(bus=0, device=-1):
-    """The actual CTAP monitor. Print one CTAPHID packet per line."""
+    """Print one CTAPHID packet per line."""
     with open(USBMONPATH.format(bus=bus), 'rb', buffering=0) as fd:
-        async for packet in USBMon(fd):
-            if 0 <= device != packet.devnum:
-                continue
-            if not packet.length == packet.len_cap == const.HID_FRAME_SIZE:
-                continue
-            print(packet)
+        async with USBMon(fd) as mon:
+            async for packet in mon:
+                if 0 <= device != packet.devnum:
+                    continue
+                if not packet.length == packet.len_cap == const.HID_FRAME_SIZE:
+                    continue
+                print(packet)
 
-
-def sighandler(signame, fut):
-    # pylint: disable=missing-docstring
-    print(f'caught {signame}, exiting')
-    fut.cancel()
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--bus', '-b',
-    type=int,
+parser.add_argument('--bus', '-b', type=int,
     help='USB bus number (0 for all) (default: %(default)d)')
-parser.add_argument('--device', '-d',
-    type=int,
+parser.add_argument('--device', '-d', type=int,
     help='USB device number (<0 for all) (default: %(default)d)')
 parser.set_defaults(bus=0, device=-1)
 
-def main(args=None):
-    # pylint: disable=missing-docstring
-    args = parser.parse_args(args)
-    loop = asyncio.get_event_loop()
+def _make_signal_handler(on_signal: Callable[[str], None], signame: str):
+    def _handler(_signum: int, _frame: Optional[FrameType]) -> None:
+        on_signal(signame)
+    return _handler
 
-    fut = loop.create_task(ctap_monitor(args.bus, args.device))
+async def main_async(args=None):
+    """Main async function."""
+    args = parser.parse_args(args)
+
+    task = asyncio.create_task(ctap_monitor(args.bus, args.device))
+
+    def on_signal(signame: str):
+        print(f'caught {signame}, exiting')
+        task.cancel()
+
+    loop = asyncio.get_running_loop()
     for signame in ('SIGINT', 'SIGTERM'):
-        loop.add_signal_handler(getattr(signal, signame),
-            sighandler, signame, fut)
+        try:
+            loop.add_signal_handler(getattr(signal, signame), on_signal, signame)
+        except NotImplementedError:
+            signal.signal(getattr(signal, signame), _make_signal_handler(on_signal, signame))
 
     try:
-        loop.run_until_complete(fut)
-    finally:
-        loop.close()
+        await task
+    except asyncio.CancelledError:
+        # expected on shutdown
+        pass
+
+def main(args=None):
+    """Main function."""
+    asyncio.run(main_async(args))
 
 if __name__ == '__main__':
     main()

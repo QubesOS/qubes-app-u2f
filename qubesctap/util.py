@@ -176,7 +176,7 @@ async def systemd_notify(**kwargs):
 
     if not kwargs:
         kwargs = {'READY': 1}
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
 
     try:
         transport, protocol = await loop.create_datagram_endpoint(

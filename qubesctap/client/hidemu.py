@@ -219,12 +219,10 @@ class CTAPHIDDevice(uhid.UHIDDevice):
                 channel.cont(packet.cont)
 
             if channel.is_finished():
-                asyncio.ensure_future(self.channels[packet.cid].execute(),
-                    loop=self.loop)
+                asyncio.create_task(self.channels[packet.cid].execute())
 
         except CtapError as err:
-            asyncio.ensure_future(self.write_ctap_error(packet.cid, err),
-                loop=self.loop)
+            asyncio.create_task(self.write_ctap_error(packet.cid, err))
 
     async def write_ctaphid_response(self, cid, cmd, data):
         """Send a CTAPHID response packets, fragmenting data if needed.

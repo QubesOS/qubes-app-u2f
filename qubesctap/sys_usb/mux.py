@@ -24,7 +24,6 @@ import asyncio
 import logging
 import logging.handlers
 import sys
-import time
 
 from fido2.client import _ctap2client_err
 from fido2.ctap import CtapError
@@ -35,41 +34,42 @@ from qubesctap import const
 from qubesctap.protocol import RequestWrapper, CborResponseWrapper
 
 
-async def mux(
-        untrusted_request, stream=None, devices=None, timeout=const.DEVICE_TIMEOUT,
-        *, loop=None):
-    """Send request (APDU/CBOR) to all discovered devices
-    and return one response.
+async def mux(untrusted_request, stream=None, devices=None,
+              timeout=const.DEVICE_TIMEOUT):
+    """Send request (APDU/CBOR) to all discovered devices and return one response.
 
     If a valid response came, return it.
-    Else, if at least one
-    :py:obj:`APDU.USE_NOT_SATISFIED` came, return that.
+    Else, if at least one APDU.USE_NOT_SATISFIED came, return that.
     Else, return some other response.
 
-    If no devices, return :py:obj:`None`.
+    If no devices, return None.
     """
+    log = logging.getLogger('mux')
+
     if stream is None:
         stream = sys.stdout.buffer
-    if loop is None:
-        loop = asyncio.get_event_loop()
 
     fuse = const.USER_TIMEOUT
+    response = None
+
     for _ in range(fuse):
         if devices is None:
             _devices = list(CtapHidDevice.list_devices())
         else:
             _devices = devices
+
         response = await _mux(
             untrusted_request=untrusted_request,
             devices=_devices,
             timeout=timeout,
-            loop=loop
         )
         if response is not None:
             break
-        time.sleep(1)
+
+        # Don't block the event loop.
+        await asyncio.sleep(1)
     else:
-        logging.getLogger('mux').warning("timeout: no device detected")
+        log.warning("timeout: no device detected")
         response = CborResponseWrapper(CtapError(CtapError.ERR.TIMEOUT))
 
     stream.write(bytes(response))
@@ -78,11 +78,13 @@ async def mux(
     return response
 
 
-async def _mux(*, untrusted_request, devices, timeout, loop):
+async def _mux(*, untrusted_request, devices, timeout):
     log = logging.getLogger('mux')
 
-    pending = {loop.run_in_executor(None, call_device, device, untrusted_request)
-        for device in devices}
+    pending = {
+        asyncio.create_task(asyncio.to_thread(call_device, device, untrusted_request))
+        for device in devices
+    }
     log.debug('pending=%r', pending)
 
     if not pending:
@@ -93,9 +95,12 @@ async def _mux(*, untrusted_request, devices, timeout, loop):
 
     response = None
     while pending:
-        done, pending = await asyncio.wait(pending, timeout=timeout,
-            return_when=asyncio.FIRST_COMPLETED)
-        logging.debug('pending=%r done=%r', pending, done)
+        done, pending = await asyncio.wait(
+            pending,
+            timeout=timeout,
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        log.debug('pending=%r done=%r', pending, done)
 
         for fut in done:
             try:
@@ -136,5 +141,4 @@ def call_device(device, untrusted_request):
         device.close()
 
     log.debug('response %s', bytes(response))
-
     return response

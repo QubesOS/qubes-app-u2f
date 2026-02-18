@@ -330,8 +330,7 @@ class UHIDDevice:
     bus = BUS.BLUETOOTH
 
     def __init__(self, *, name=None, serial=None, vendor=None, product=None,
-            version=None, bus=None, phys=None, country=None, rdesc=None,
-            loop=None):
+            version=None, bus=None, phys=None, country=None, rdesc=None):
         # pylint: disable=too-many-arguments
         self.log = logging.getLogger(type(self).__name__)
 
@@ -361,8 +360,8 @@ class UHIDDevice:
 
         self._normalize_version()
 
-        self.loop = loop or asyncio.get_event_loop()
         self.fd: Optional[BinaryIO] = None
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
 
         self.is_started = asyncio.Event()
         self.is_open = asyncio.Event()
@@ -390,6 +389,8 @@ class UHIDDevice:
 
         self.log.getChild('uhid').debug('open()')
         self.fd = open('/dev/uhid', 'r+b', buffering=0)
+        self._loop = asyncio.get_running_loop()
+
         await self.write_uhid_req(UHID.CREATE2,
             name=self.name.encode('utf-8'),
             phys=self.phys,
@@ -400,15 +401,20 @@ class UHIDDevice:
             version=self.version,
             country=self.country,
             rd=self.rdesc)
-        self.loop.add_reader(self.fd, self._read_req)
+
+        self._loop.add_reader(self.fd, self._read_req)
 
     async def close(self):
         """Send DESTROY event."""
         assert self.fd is not None  # open file first!
         self.log.debug('close()')
         await self.write_uhid_req(UHID.DESTROY)
-        self.loop.remove_reader(self.fd)  # type: ignore
+        if self._loop is not None:
+            self._loop.remove_reader(self.fd)
+        self._loop = None
+
         self.fd.close()
+        self.fd = None
 
     async def write_uhid_req(self, event, **kwargs):
         """Send an event to uhid device
@@ -444,7 +450,7 @@ class UHIDDevice:
             else:
                 setattr(union, attr, value)
 
-        return await self.loop.run_in_executor(None, self.fd.write, event)
+        return await asyncio.to_thread(self.fd.write, event)
 
     def _read_req(self):
         # there is .read(), which is definitely an IO operation, but this is
@@ -485,10 +491,10 @@ class UHIDDevice:
 
     def handle_hid_get_report(self, event):
         self.log.getChild('uhid').debug('handle_hid_get_report()')
-        asyncio.ensure_future(self.write_uhid_req(
-            UHID.GET_REPORT_REPLY, id=event.id, err=errno.EIO), loop=self.loop)
+        asyncio.create_task(self.write_uhid_req(
+            UHID.GET_REPORT_REPLY, id=event.id, err=errno.EIO))
 
     def handle_hid_set_report(self, event):
         self.log.getChild('uhid').debug('handle_hid_set_report()')
-        asyncio.ensure_future(self.write_uhid_req(
-            UHID.SET_REPORT_REPLY, id=event.id, err=errno.EIO), loop=self.loop)
+        asyncio.create_task(self.write_uhid_req(
+            UHID.SET_REPORT_REPLY, id=event.id, err=errno.EIO))

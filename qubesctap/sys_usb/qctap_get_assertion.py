@@ -35,12 +35,11 @@ parser.add_argument('credential_id_hash', metavar='QREXEC_SERVICE_ARGUMENT',
                     nargs='?')
 
 
-def main(args=None, mux=default_mux):
-    """Main routine of ``u2f.Register`` qrexec call"""
+async def main_async(args=None, mux=default_mux):
+    """Main async routine of ``u2f.Register`` qrexec call"""
 
     args = parser.parse_args(args)
     sys_usb.setup_logging()
-    loop = asyncio.get_event_loop()
 
     untrusted_request = sys.stdin.buffer.read()
 
@@ -52,9 +51,12 @@ def main(args=None, mux=default_mux):
             return 1
         request.trim_allow_list(args.credential_id_hash)
 
-    loop.run_until_complete(mux(untrusted_request))
+    await mux(untrusted_request)
     return 0
 
+def main(args=None, mux=default_mux):
+    """Main routine of ``u2f.Register`` qrexec call"""
+    return asyncio.run(main_async(args, mux))
 
 if __name__ == '__main__':
     sys.exit(main())

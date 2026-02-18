@@ -30,19 +30,25 @@ from qubesctap import sys_usb, const
 from qubesctap.sys_usb.mux import mux as default_mux
 
 
-def main(mux=default_mux):
-    """Main routine of ``u2f.Register`` qrexec call"""
+async def main_async(mux=default_mux):
+    """Main async routine of ``u2f.Register`` qrexec call"""
 
     sys_usb.setup_logging()
-    loop = asyncio.get_event_loop()
 
-    response = loop.run_until_complete(mux(sys.stdin.buffer.read()))
+    response = await mux(sys.stdin.buffer.read())
+
+    if not response.is_ok:
+        return 1
 
     try:
-        loop.run_until_complete(qrexec_register_argument(
-            'u2f.Authenticate', response.qrexec_arg))
+        await qrexec_register_argument(
+            'u2f.Authenticate', response.qrexec_arg)
     except InvalidCommandError:
         pass
+
+def main(mux=default_mux):
+    """Main routine of ``u2f.Register`` qrexec call"""
+    asyncio.run(main_async(mux))
 
 
 async def qrexec_register_argument(rpcname, argument, frontend=None):
