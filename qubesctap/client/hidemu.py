@@ -305,6 +305,10 @@ class CTAPHIDDevice(uhid.UHIDDevice):
     async def _handle_ctaphid_request(self, cid, untrusted_cmd, ctaphid, protocol):
         self.log.getChild('ctaphid').debug(
             'handle_ctaphid_%s(cid=%#08x, data=...)', ctaphid, cid)
+        # the response must use the same CTAPHID command as the request:
+        # CTAPHID_CBOR for CTAP2, CTAPHID_MSG for CTAP1/U2F (CTAP spec
+        # 11.2.9.1.1, 11.2.9.1.2)
+        resp_cmd = CTAPHID.CBOR if ctaphid == "cbor" else CTAPHID.MSG
         try:
             request = RequestWrapper.from_bytes(untrusted_cmd)
             request.raise_error(protocol=protocol)
@@ -312,7 +316,7 @@ class CTAPHIDDevice(uhid.UHIDDevice):
                 'handle_ctaphid_%s(cid=%#08x) %s=%r',
                 ctaphid, cid, ctaphid, request.data)
             handle = getattr(self, f'handle_{protocol}_' + request.name)
-            await self.write_ctaphid_response(cid, CTAPHID.MSG,
+            await self.write_ctaphid_response(cid, resp_cmd,
                                               bytes(await handle(request)))
         except ApduError as err:
             self.log.getChild('ctaphid').info(
