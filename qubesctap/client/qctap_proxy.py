@@ -153,12 +153,22 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
 
     async def handle_fido2_get_assertion(self, cbor):
         self.log.getChild('ctap').debug('handle_fido2_get_assertion()')
-        self.log.getChild('ctap').debug('%s', str(list(cbor.qrexec_args)))
-        for qrexec_arg in cbor.qrexec_args:
+        qrexec_args = list(cbor.qrexec_args)
+        self.log.getChild('ctap').debug('%s', str(qrexec_args))
+        if qrexec_args:
+            rpcnames = [f'u2f.Authenticate+{arg}' for arg in qrexec_args]
+        else:
+            # Discoverable credential: an empty allowList names no credential,
+            # so there is no per-credential qrexec argument. Call the service
+            # without one; the backend then skips the allowList check and lets
+            # the authenticator pick the resident credential (still gated by
+            # qrexec policy, PIN and user presence).
+            rpcnames = ['u2f.Authenticate']
+        for rpcname in rpcnames:
             # pylint: disable=broad-except
             try:
                 response = await self.qrexec_transaction(
-                    cbor, rpcname=f'u2f.Authenticate+{qrexec_arg}')
+                    cbor, rpcname=rpcname)
                 return CborResponseWrapper.from_bytes(
                     response, expected_type=AssertionResponse)
             except Exception as err:

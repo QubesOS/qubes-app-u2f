@@ -238,3 +238,29 @@ def test_main_calls_asyncio_run(monkeypatch):
 
     entry.main_async.assert_called_once_with(None)
     run_mock.assert_called_once_with(sentinel)
+
+@pytest.mark.asyncio
+async def test_get_assertion_discoverable_uses_argless_rpc(monkeypatch):
+    """A GetAssertion with an empty allowList (discoverable credential) has no
+    per-credential qrexec argument, so it must invoke u2f.Authenticate without
+    one instead of silently doing nothing."""
+    from fido2 import cbor
+
+    dev = qctap_proxy.CTAPHIDQrexecDevice("some-vm", name="x")
+
+    # GetAssertion: rp_id (1) + client_data_hash (2) + options (5); NO allowList
+    request = RequestWrapper.from_bytes(
+        bytes([0x02]) + cbor.encode(
+            {1: "webauthn.io", 2: b"\x00" * 32, 5: {"up": True}}))
+
+    captured = {}
+
+    async def fake_qrexec(_req, rpcname):
+        captured["rpcname"] = rpcname
+        return get_response_bytes("GetAssertion")
+
+    monkeypatch.setattr(dev, "qrexec_transaction", fake_qrexec)
+
+    await dev.handle_fido2_get_assertion(request)
+
+    assert captured["rpcname"] == "u2f.Authenticate"
