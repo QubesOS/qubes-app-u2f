@@ -37,6 +37,31 @@ from fido2.webauthn import PublicKeyCredentialRpEntity, Aaguid
 from qubesctap.util import qrexec_arg
 
 
+@dataclass(eq=False, frozen=True, kw_only=True)
+class LenientRpEntity(PublicKeyCredentialRpEntity):
+    """A relying-party entity that tolerates a missing ``name``.
+
+    At the CTAP2 authenticatorMakeCredential level the ``name`` in the rp
+    map is optional (Firefox, for instance, omits it), but fido2's
+    PublicKeyCredentialRpEntity marks it required -- so the whole request
+    fails to parse and is rejected before it ever reaches the authenticator.
+
+    When ``name`` is absent we default it to the rp ``id``. The value must be
+    a NON-EMPTY text string: the sys-usb backend re-serialises the request to
+    the token through fido2, whose _DataClassMapping.__getitem__ turns an
+    empty string into ``[]`` (a vacuous all() over the empty sequence); an
+    array where the key expects a text string yields
+    CTAP2_ERR_CBOR_UNEXPECTED_TYPE (0x11). The id is always present and
+    non-empty, so it side-steps that.
+    """
+    name: str = ""
+
+    def __post_init__(self):
+        super().__post_init__()
+        if not self.name and self.id:
+            object.__setattr__(self, "name", self.id)
+
+
 @dataclass(eq=False, frozen=True)
 class Ctap2Dataclass(_CborDataObject):
     """
@@ -287,7 +312,7 @@ class MakeCredential(Ctap2Request):
     """
     # pylint: disable=invalid-name,too-many-instance-attributes
     client_data_hash: bytes
-    rp: PublicKeyCredentialRpEntity
+    rp: LenientRpEntity
     user: dict
     pub_key_cred_params: List[Mapping[str, Any]]
     exclude_list: Optional[List[Mapping[str, Any]]]
@@ -438,6 +463,22 @@ class ClientPIN(Ctap2Request):
     pin_hash_enc: Optional[bytes]
     permissions: Optional[int]
     permissions_rpid: Optional[str]
+
+    @classmethod
+    def _get_field_key(cls, field: Field) -> int:
+        # The authenticatorClientPIN CBOR map is not contiguous: it skips keys
+        # 0x07 and 0x08, so permissions is 0x09 and rpId is 0x0A (CTAP2.1
+        # 6.5.5). The default positional index+1 map would assign them 7/8,
+        # dropping them on both parse and re-serialisation for the
+        # getPinUvAuthTokenUsingPin/UvWithPermissions sub-commands and breaking
+        # PIN entry on every authenticator that advertises pinUvAuthToken.
+        # (execute() already emits them at 9/10 via args(); this keeps
+        # from_dict/to_dict consistent with that.)
+        if field.name == "permissions":
+            return 0x09
+        if field.name == "permissions_rpid":
+            return 0x0A
+        return super()._get_field_key(field)
 
     def execute(self, ctap: Ctap2) -> ClientPINResponse:
         """

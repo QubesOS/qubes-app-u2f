@@ -199,3 +199,22 @@ async def test_handle_hid_output_finished_channel_schedules_execute(monkeypatch)
 
     # And since PING handler should run, it should try to write a response
     dev.write_ctaphid_response.assert_awaited()
+@pytest.mark.asyncio
+async def test_cbor_request_answered_with_cbor_command():
+    """
+    A CTAPHID_CBOR request must be answered on CTAPHID_CBOR, not
+    CTAPHID_MSG (CTAP spec 11.2.9.1.2; QubesOS/qubes-issues#10981).
+    """
+    dev = hidemu.CTAPHIDDevice()
+    dev.write_ctaphid_response = AsyncMock()
+    # authenticatorGetInfo response payload: CTAP2_OK + empty CBOR map
+    dev.handle_fido2_get_info = AsyncMock(return_value=b"\x00\xa0")
+
+    # 0x04 = authenticatorGetInfo
+    await dev.handle_ctaphid_cbor(1, b"\x04")
+
+    dev.write_ctaphid_response.assert_awaited_once()
+    cid, cmd, data = dev.write_ctaphid_response.await_args.args
+    assert cid == 1
+    assert cmd == hidemu.CTAPHID.CBOR
+    assert data == b"\x00\xa0"
