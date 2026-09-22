@@ -51,7 +51,7 @@ async def main_async(args=None, mux=default_mux):
             return 1
         request.trim_allow_list(args.credential_id_hash)
 
-    await mux(untrusted_request)
+    await mux(bytes(request))
     return 0
 
 def main(args=None, mux=default_mux):
