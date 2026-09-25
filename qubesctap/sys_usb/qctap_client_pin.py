@@ -20,23 +20,24 @@
 
 """Qrexec call: ctap.ClientPin"""
 
+# pylint: disable=duplicate-code
+
 import asyncio
 import sys
 
-from qubesctap import sys_usb
-from qubesctap.sys_usb.mux import mux
+from qubesctap import sys_usb, ctap2
+from qubesctap.sys_usb.mux import mux as default_mux, forward_if_expected
 
-# pylint: disable=duplicate-code
-
-async def main_async():
+async def main_async(mux=default_mux):
     """Main async routine of ``ctap.ClientPin`` qrexec call"""
 
     sys_usb.setup_logging()
-    await mux(sys.stdin.buffer.read())
+    await forward_if_expected(
+        sys.stdin.buffer.read(), (ctap2.ClientPIN,), mux)
 
-def main():
+def main(mux=default_mux):
     """Main function."""
-    asyncio.run(main_async())
+    return asyncio.run(main_async(mux))
 
 if __name__ == '__main__':
     asyncio.run(main_async())

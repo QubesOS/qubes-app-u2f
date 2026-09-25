@@ -26,8 +26,8 @@ import os
 import sys
 
 from qubesctap.protocol import RequestWrapper
-from qubesctap import sys_usb
-from qubesctap.sys_usb.mux import mux as default_mux
+from qubesctap import sys_usb, ctap1, ctap2
+from qubesctap.sys_usb.mux import mux as default_mux, rejection_response
 
 parser = argparse.ArgumentParser()
 parser.add_argument('credential_id_hash', metavar='QREXEC_SERVICE_ARGUMENT',
@@ -44,6 +44,12 @@ async def main_async(args=None, mux=default_mux):
     untrusted_request = sys.stdin.buffer.read()
 
     request = RequestWrapper.from_bytes(untrusted_request)
+
+    rejection = rejection_response(
+        request, (ctap1.Authenticate, ctap2.GetAssertion))
+    if rejection is not None:
+        sys.stdout.buffer.write(bytes(rejection))
+        return 1
 
     allow_list = list(request.qrexec_args)
     if args.credential_id_hash is not None:

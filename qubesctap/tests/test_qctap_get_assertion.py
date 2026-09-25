@@ -25,7 +25,8 @@ import pytest
 from qubesctap.ctap2 import GetAssertion
 from qubesctap.protocol import CborRequestWrapper, RequestWrapper
 from qubesctap.sys_usb import qctap_get_assertion
-from qubesctap.tests.conftest import mocked_stdio, get_qrexec_arg, get_request
+from qubesctap.tests.conftest import (
+    mocked_stdio, get_qrexec_arg, get_request, get_request_bytes)
 
 
 @pytest.mark.parametrize(
@@ -97,3 +98,18 @@ def test_allow_list_is_trimmed():
         assert retcode in (None, 0)
 
     assert muxed_args == [argument]
+
+
+def test_rejects_non_assertion():
+    muxed = False
+
+    async def mux(_apdu):
+        nonlocal muxed
+        muxed = True
+
+    with mocked_stdio(get_request_bytes("MakeCredential")):
+        retcode = qctap_get_assertion.main([get_qrexec_arg("GetAssertion")],
+                                           mux=mux)
+        assert retcode == 1
+        assert sys.stdout.buffer.getvalue()
+    assert not muxed
