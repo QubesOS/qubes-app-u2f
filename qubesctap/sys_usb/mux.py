@@ -24,6 +24,7 @@ import asyncio
 import logging
 import logging.handlers
 import sys
+from typing import Optional
 
 from fido2.client import _ctap2client_err
 from fido2.ctap import CtapError
@@ -32,41 +33,11 @@ from fido2.hid import CtapHidDevice
 
 from qubesctap import const
 from qubesctap.protocol import (
-    RequestWrapper, ApduRequestWrapper, ApduResponseWrapper,
-    CborResponseWrapper)
+    InvalidRequest, ApduRequestWrapper, ApduResponseWrapper,
+    CborResponseWrapper, ResponseWrapper)
 
 
-def rejection_response(request, expected):
-    """
-    Reject a request whose command does not belong to this qrexec service.
-    """
-    if isinstance(request.data, expected):
-        return None
-    logging.getLogger('mux').warning(
-        "refusing %s on this service; expected one of %s",
-        type(request.data).__name__,
-        tuple(cls.__name__ for cls in expected))
-    if isinstance(request, ApduRequestWrapper):
-        return ApduResponseWrapper(ApduError(APDU.USE_NOT_SATISFIED))
-    return CborResponseWrapper(CtapError(CtapError.ERR.INVALID_COMMAND))
-
-
-async def forward_if_expected(untrusted_request, expected, mux_fn, stream=None):
-    """
-    Forward a request to the device only if in ``expected``.
-    """
-    if stream is None:
-        stream = sys.stdout.buffer
-    request = RequestWrapper.from_bytes(untrusted_request)
-    rejection = rejection_response(request, expected)
-    if rejection is not None:
-        stream.write(bytes(rejection))
-        return None
-    return await mux_fn(untrusted_request)
-
-
-async def mux(untrusted_request, stream=None, devices=None,
-              timeout=const.DEVICE_TIMEOUT):
+async def mux(request, stream=None, devices=None, timeout=const.DEVICE_TIMEOUT):
     """Send request (APDU/CBOR) to all discovered devices and return one response.
 
     If a valid response came, return it.
@@ -80,8 +51,19 @@ async def mux(untrusted_request, stream=None, devices=None,
     if stream is None:
         stream = sys.stdout.buffer
 
+    response: Optional[ResponseWrapper] = None
+
+    if isinstance(request.data, InvalidRequest):
+        code = int.from_bytes(request.data.return_code, "big")
+        if isinstance(request, ApduRequestWrapper):
+            response = ApduResponseWrapper(ApduError(code))
+        else:
+            response = CborResponseWrapper(CtapError(code))
+        stream.write(bytes(response))
+        stream.close()
+        return response
+
     fuse = const.USER_TIMEOUT
-    response = None
 
     for _ in range(fuse):
         if devices is None:
@@ -90,7 +72,7 @@ async def mux(untrusted_request, stream=None, devices=None,
             _devices = devices
 
         response = await _mux(
-            untrusted_request=untrusted_request,
+            request=request,
             devices=_devices,
             timeout=timeout,
         )
@@ -109,11 +91,11 @@ async def mux(untrusted_request, stream=None, devices=None,
     return response
 
 
-async def _mux(*, untrusted_request, devices, timeout):
+async def _mux(*, request, devices, timeout):
     log = logging.getLogger('mux')
 
     pending = {
-        asyncio.create_task(asyncio.to_thread(call_device, device, untrusted_request))
+        asyncio.create_task(asyncio.to_thread(call_device, device, request))
         for device in devices
     }
     log.debug('pending=%r', pending)
@@ -152,15 +134,11 @@ async def _mux(*, untrusted_request, devices, timeout):
     return response
 
 
-def call_device(device, untrusted_request):
-    """Send bytes to device and get wrapped response.
-
-    The request is validated before being sent to the device.
-    """
+def call_device(device, request):
+    """Send a request to device and get wrapped response."""
     log = logging.getLogger('mux.device')
 
     try:
-        request = RequestWrapper.from_bytes(untrusted_request)
         log.debug("request: %s", bytes(request))
 
         try:

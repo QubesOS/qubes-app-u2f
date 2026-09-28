@@ -42,7 +42,6 @@ CTAP1_ACCEPTABLE_RESPONSES = (RegistrationData, SignatureData)
 CTAP2_ACCEPTABLE_RESPONSES = (AssertionResponse, AttestationResponse,
                               ctap2.Info, ctap2.ClientPINResponse)
 
-
 class InvalidRequest:
     """
     A class representing an invalid request.
@@ -138,10 +137,19 @@ class RequestWrapper(CommunicatWrapper, ABC):
 
     @staticmethod
     def from_bytes(
-            untrusted_data: bytes, expected_type: Optional[type] = None
+            untrusted_data: bytes, expected_type=None, credential_id_hash=None
     ) -> "RequestWrapper":
         """
-        Returns wrapped instance of the CTAP1/CTAP2 request from bytes.
+        Parse, and *verify*, a CTAP1/CTAP2 request in one step.
+
+        ``expected_type`` is the command class, or a tuple of command classes,
+        the caller accepts (as for :func:`isinstance`); ``None`` (the default)
+        accepts any command.
+
+        ``credential_id_hash`` is the qrexec service argument (the credential-id
+        hash the policy authorised); ``None`` (the default) applies no
+        credential restriction. When set, the request's allow_list is checked
+        and trimmed to that single credential.
         """
         log = logging.getLogger('ctap.request')
 
@@ -172,17 +180,37 @@ class RequestWrapper(CommunicatWrapper, ABC):
         # pylint: disable=broad-except
         try:
             request = parser(untrusted_data)
-            result = req_cls(request)
-            log.debug("return %s", req_cls.__name__)
-            return result
         except ApduError as err:
             log.error("APDU parsing error: %s", str(err))
+            request = None
         except Exception as err:
             log.error("Parsing error: %s", str(err))
+            request = None
+        if request is None:
+            log.warning("return InvalidRequest(WRONG_DATA)")
+            return CborRequestWrapper(InvalidRequest(APDU.WRONG_DATA))
 
-        request = InvalidRequest(APDU.WRONG_DATA)
-        log.warning("return InvalidRequest(%s)", request.return_code)
-        return CborRequestWrapper(request)
+        result = req_cls(request)
+
+        reject = int_to_bytes(
+            int(CtapError.ERR.INVALID_COMMAND)
+            if req_cls is CborRequestWrapper else int(APDU.USE_NOT_SATISFIED))
+
+        if expected_type is not None \
+                and not isinstance(result.data, expected_type):
+            log.warning("refusing %s: expected %s",
+                        type(result.data).__name__, expected_type)
+            return req_cls(InvalidRequest(reject))
+
+        if credential_id_hash is not None:
+            allowed = list(result.qrexec_args)
+            if not credential_id_hash or credential_id_hash not in allowed:
+                log.warning("refusing: credentials not allowed")
+                return req_cls(InvalidRequest(reject))
+            result.restrict_to_credential(credential_id_hash)
+
+        log.debug("return %s", req_cls.__name__)
+        return result
 
     def raise_error(self, protocol: Optional[str] = None):
         """
@@ -214,9 +242,9 @@ class RequestWrapper(CommunicatWrapper, ABC):
         """
         raise NotImplementedError()
 
-    def trim_allow_list(self, arg):
+    def restrict_to_credential(self, credential_id_hash):
         """
-        Remove credentials with different hash than the `arg`.
+        Remove credentials with different hash than the `credential_id_hash`.
         """
         raise NotImplementedError()
 
@@ -305,7 +333,7 @@ class ApduRequestWrapper(RequestWrapper):
             raise InvalidCommandError()
         return [qrexec_arg(self.data.key_handle)]
 
-    def trim_allow_list(self, arg):
+    def restrict_to_credential(self, credential_id_hash):
         """ctap1.Authenticate can transport only one argument"""
 
     def execute(self, device) -> ApduResponseWrapper:
@@ -410,16 +438,16 @@ class CborRequestWrapper(RequestWrapper):
         for cred in self.data.allow_list:
             yield qrexec_arg(cred['id'])
 
-    def trim_allow_list(self, arg):
+    def restrict_to_credential(self, credential_id_hash):
         """
-        Remove credentials with different hash than the `arg`.
+        Remove credentials with different hash than the `credential_id_hash`.
         """
         if not isinstance(self.data, ctap2.GetAssertion):
             raise InvalidCommandError()
         if self.data.allow_list is None:
             return
         allow_list = [cred for cred in self.data.allow_list
-                      if qrexec_arg(cred['id']) == arg]
+                      if qrexec_arg(cred['id']) == credential_id_hash]
         trimmed_data_dict = {k: v for k, v in self.data.__dict__.items()
                              if not k.startswith("_")}
         trimmed_data_dict["allow_list"] = allow_list

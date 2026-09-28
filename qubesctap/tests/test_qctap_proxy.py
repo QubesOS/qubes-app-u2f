@@ -27,6 +27,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from fido2 import cbor
 from fido2.ctap1 import APDU, ApduError
 from fido2.ctap2 import Ctap2
 
@@ -120,7 +121,6 @@ async def test_handle_fido2_get_info_modifies_info_when_pin_disabled(monkeypatch
 
     monkeypatch.setattr(qctap_proxy.ctap2, "Info", FakeInfo)
 
-    from fido2 import cbor
     info_bytes = b"\x00" + cbor.encode({0x01: "x", 0x06: [1]})
 
     async def fake_qrexec(_req, rpcname: str):
@@ -130,7 +130,8 @@ async def test_handle_fido2_get_info_modifies_info_when_pin_disabled(monkeypatch
     monkeypatch.setattr(dev, "qrexec_transaction", fake_qrexec)
     monkeypatch.setattr(dev, "_pin_allowed", AsyncMock(return_value=False))
 
-    req = RequestWrapper.from_bytes(chr(Ctap2.CMD.GET_INFO).encode())
+    req = RequestWrapper.from_bytes(
+        chr(Ctap2.CMD.GET_INFO).encode())
     resp = await dev.handle_fido2_get_info(req)
 
     # Don't assert resp.is_ok here; FakeInfo isn't in protocol.CTAP2_ACCEPTABLE_RESPONSES

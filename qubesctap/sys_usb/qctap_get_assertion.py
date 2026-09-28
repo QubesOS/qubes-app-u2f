@@ -27,7 +27,7 @@ import sys
 
 from qubesctap.protocol import RequestWrapper
 from qubesctap import sys_usb, ctap1, ctap2
-from qubesctap.sys_usb.mux import mux as default_mux, rejection_response
+from qubesctap.sys_usb.mux import mux as default_mux
 
 parser = argparse.ArgumentParser()
 parser.add_argument('credential_id_hash', metavar='QREXEC_SERVICE_ARGUMENT',
@@ -36,28 +36,18 @@ parser.add_argument('credential_id_hash', metavar='QREXEC_SERVICE_ARGUMENT',
 
 
 async def main_async(args=None, mux=default_mux):
-    """Main async routine of ``u2f.Register`` qrexec call"""
+    """Main async routine of ``u2f.Authenticate`` qrexec call"""
 
     args = parser.parse_args(args)
     sys_usb.setup_logging()
 
-    untrusted_request = sys.stdin.buffer.read()
+    # A missing qrexec argument is replaced with "" so the request is refused
+    request = RequestWrapper.from_bytes(
+        sys.stdin.buffer.read(),
+        expected_type=(ctap1.Authenticate, ctap2.GetAssertion),
+        credential_id_hash=args.credential_id_hash or "")
 
-    request = RequestWrapper.from_bytes(untrusted_request)
-
-    rejection = rejection_response(
-        request, (ctap1.Authenticate, ctap2.GetAssertion))
-    if rejection is not None:
-        sys.stdout.buffer.write(bytes(rejection))
-        return 1
-
-    allow_list = list(request.qrexec_args)
-    if args.credential_id_hash is not None:
-        if args.credential_id_hash not in allow_list:
-            return 1
-        request.trim_allow_list(args.credential_id_hash)
-
-    await mux(bytes(request))
+    await mux(request)
     return 0
 
 def main(args=None, mux=default_mux):

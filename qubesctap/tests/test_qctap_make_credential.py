@@ -23,6 +23,7 @@ from unittest.mock import patch
 
 import pytest
 
+from qubesctap.protocol import InvalidRequest
 from qubesctap.sys_usb import qctap_make_credential
 from qubesctap.tests.conftest import (
     mocked_stdio, get_response, get_request_bytes)
@@ -35,8 +36,11 @@ from qubesctap.tests.conftest import (
 )
 def test_key_handle_match(_mock_qrexec_register_argument, action):
     response = get_response(action)
+    muxed = None
 
-    async def mux(_input):
+    async def mux(req):
+        nonlocal muxed
+        muxed = req
         return response
 
     with mocked_stdio(get_request_bytes("MakeCredential")):
@@ -44,18 +48,19 @@ def test_key_handle_match(_mock_qrexec_register_argument, action):
         assert retcode in (None, 0) # main function failed
         assert not sys.stdout.buffer.getvalue()
 
+    assert not isinstance(muxed.data, InvalidRequest)
 
 
 @patch('qubesctap.sys_usb.qctap_make_credential.qrexec_register_argument')
 def test_rejects_non_registration(_mock_qrexec_register_argument):
-    muxed = False
+    muxed = None
 
-    async def mux(_input):
+    async def mux(req):
         nonlocal muxed
-        muxed = True
-        return get_response("MakeCredential")
+        muxed = req
+        return get_response("CtapError")
 
     with mocked_stdio(get_request_bytes("GetAssertion")):
         qctap_make_credential.main(mux)
-        assert sys.stdout.buffer.getvalue() == b'\x01'
-    assert not muxed
+
+    assert isinstance(muxed.data, InvalidRequest)

@@ -25,15 +25,17 @@
 import asyncio
 import sys
 
+from qubesctap.protocol import RequestWrapper
 from qubesctap import sys_usb, ctap2
-from qubesctap.sys_usb.mux import mux as default_mux, forward_if_expected
+from qubesctap.sys_usb.mux import mux as default_mux
 
 async def main_async(mux=default_mux):
     """Main async routine of ``ctap.ClientPin`` qrexec call"""
 
     sys_usb.setup_logging()
-    await forward_if_expected(
-        sys.stdin.buffer.read(), (ctap2.ClientPIN,), mux)
+    request = RequestWrapper.from_bytes(
+        sys.stdin.buffer.read(), expected_type=ctap2.ClientPIN)
+    await mux(request)
 
 def main(mux=default_mux):
     """Main function."""

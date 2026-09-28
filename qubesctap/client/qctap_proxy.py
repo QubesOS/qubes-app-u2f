@@ -109,7 +109,8 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
         try:
             # try to send some info
             _ = await self.qrexec_transaction(
-                RequestWrapper.from_bytes(chr(Ctap2.CMD.GET_INFO).encode()),
+                RequestWrapper.from_bytes(
+                    chr(Ctap2.CMD.GET_INFO).encode()),
                 rpcname='ctap.ClientPin'
             )
         except ApduError as err:

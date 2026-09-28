@@ -24,7 +24,8 @@ import pytest
 from fido2.ctap import CtapError
 
 from qubesctap.client import uhid
-from qubesctap.protocol import RequestWrapper
+from qubesctap.protocol import (
+    InvalidRequest, RequestWrapper, CborRequestWrapper)
 from qubesctap.sys_usb.mux import mux
 from qubesctap.tests.conftest import get_request, \
     get_response_bytes, mocked_stdio
@@ -40,8 +41,10 @@ class FakeDevice:
         else:
             self.capabilities = 0x00
         self.response = response
+        self.called = False
 
     def call(self, cmd, data=b"", event=None, on_keepalive=None) -> bytes:
+        self.called = True
         request_name = RequestWrapper.from_bytes(data).data.__class__.__name__
         return get_response_bytes(request_name)
 
@@ -63,7 +66,7 @@ async def test_mux_ctap2(list_devices, action):
     )
 
     with mocked_stdio():
-        response = await mux(bytes(request))
+        response = await mux(request)
         assert response.is_ok == (action not in ("CtapError", "ApduError"))
 
 
@@ -81,7 +84,7 @@ async def test_mux_ctap1(list_devices, action):
     )
 
     with mocked_stdio():
-        response = await mux(bytes(request))
+        response = await mux(request)
         assert response.is_ok == (action != "ApduError")
 
 
@@ -93,6 +96,20 @@ async def test_mux_timeout(list_devices):
     list_devices.return_value = ()
 
     with mocked_stdio():
-        response = await mux(bytes(request))
+        response = await mux(request)
         assert not response.is_ok
         assert response.data.code == CtapError.ERR.TIMEOUT
+
+
+@patch('fido2.hid.CtapHidDevice.list_devices')
+@pytest.mark.asyncio
+async def test_mux_refuses_invalid_request(list_devices):
+    token = FakeDevice(ctap2=True, response=b"")
+    list_devices.return_value = (token,)
+    invalid = CborRequestWrapper(InvalidRequest(b'\x01'))
+
+    with mocked_stdio():
+        response = await mux(invalid)
+        assert not response.is_ok
+    # no device was contacted
+    assert not token.called

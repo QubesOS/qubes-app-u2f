@@ -22,7 +22,7 @@ import pytest
 from fido2.ctap1 import ApduError, APDU
 
 from qubesctap.protocol import ApduResponseWrapper, CborResponseWrapper, \
-    InvalidCommandError, RequestWrapper
+    InvalidCommandError, InvalidRequest, RequestWrapper
 from qubesctap.tests.conftest import get_response_bytes, \
     get_response_class, get_request_bytes, get_request_class, get_qrexec_arg
 
@@ -101,3 +101,33 @@ def test_cbor_request_wrapper(action):
     actual = bytes(request)
     assert actual == expected
     assert isinstance(request.data, get_request_class(action))
+
+
+def test_from_bytes_rejects_unexpected():
+    request = RequestWrapper.from_bytes(
+        get_request_bytes("GetAssertion"),
+        expected_type=get_request_class("MakeCredential"))
+    assert isinstance(request.data, InvalidRequest)
+
+
+def test_from_bytes_restricts_to_credential():
+    arg = get_qrexec_arg("GetAssertion")
+    expected = get_request_class("GetAssertion")
+
+    # matching
+    request = RequestWrapper.from_bytes(
+        get_request_bytes("GetAssertion"), expected_type=expected,
+        credential_id_hash=arg)
+    assert list(request.qrexec_args) == [arg]
+
+    # empty
+    rejected = RequestWrapper.from_bytes(
+        get_request_bytes("GetAssertion"), expected_type=expected,
+        credential_id_hash="")
+    assert isinstance(rejected.data, InvalidRequest)
+
+    # any
+    unrestricted = RequestWrapper.from_bytes(
+        get_request_bytes("GetAssertion"), expected_type=expected)
+    assert not isinstance(unrestricted.data, InvalidRequest)
+    assert list(unrestricted.qrexec_args) == [arg]

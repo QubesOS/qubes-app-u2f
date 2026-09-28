@@ -27,7 +27,7 @@ import sys
 
 from qubesctap.protocol import InvalidCommandError, RequestWrapper
 from qubesctap import sys_usb, const, ctap1, ctap2
-from qubesctap.sys_usb.mux import mux as default_mux, rejection_response
+from qubesctap.sys_usb.mux import mux as default_mux
 
 
 async def main_async(mux=default_mux):
@@ -35,18 +35,13 @@ async def main_async(mux=default_mux):
 
     sys_usb.setup_logging()
 
-    untrusted_request = sys.stdin.buffer.read()
+    request = RequestWrapper.from_bytes(
+        sys.stdin.buffer.read(),
+        expected_type=(ctap1.Register, ctap2.MakeCredential))
 
-    request = RequestWrapper.from_bytes(untrusted_request)
-    rejection = rejection_response(
-        request, (ctap1.Register, ctap2.MakeCredential))
-    if rejection is not None:
-        sys.stdout.buffer.write(bytes(rejection))
-        return 1
+    response = await mux(request)
 
-    response = await mux(untrusted_request)
-
-    if not response.is_ok:
+    if response is None or not response.is_ok:
         return 1
 
     try:

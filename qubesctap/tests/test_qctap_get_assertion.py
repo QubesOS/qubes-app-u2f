@@ -23,56 +23,63 @@ import sys
 import pytest
 
 from qubesctap.ctap2 import GetAssertion
-from qubesctap.protocol import CborRequestWrapper, RequestWrapper
+from qubesctap.protocol import CborRequestWrapper, InvalidRequest
 from qubesctap.sys_usb import qctap_get_assertion
 from qubesctap.tests.conftest import (
     mocked_stdio, get_qrexec_arg, get_request, get_request_bytes)
 
 
-@pytest.mark.parametrize(
-    "action",
-    ("GetAssertion", "Authenticate",)
-)
+@pytest.mark.parametrize("action", ("GetAssertion", "Authenticate"))
 def test_key_handle_match(action):
     request = get_request(action)
     argument = get_qrexec_arg(action)
+    muxed = None
 
-    apdu_muxed = False
-
-    async def mux(apdu):
-        nonlocal apdu_muxed
-        apdu_muxed = bytes(apdu) == bytes(request)
+    async def mux(req):
+        nonlocal muxed
+        muxed = req
 
     with mocked_stdio(bytes(request)):
         retcode = qctap_get_assertion.main([argument], mux=mux)
-        assert retcode in (None, 0) # main function failed
+        assert retcode in (None, 0)
         assert not sys.stdout.buffer.getvalue()
-        assert apdu_muxed
+
+    assert not isinstance(muxed.data, InvalidRequest)
+    assert list(muxed.qrexec_args) == [argument]
 
 
-@pytest.mark.parametrize(
-    "action",
-    ("GetAssertion", "Authenticate",)
-)
+@pytest.mark.parametrize("action", ("GetAssertion", "Authenticate"))
 def test_key_handle_mismatch(action):
     request = get_request(action)
-    argument = get_qrexec_arg(action)
-    false_argument = str(reversed(argument))
-    assert argument != false_argument
+    false_argument = str(reversed(get_qrexec_arg(action)))
+    muxed = None
 
-    apdu_muxed = False
-
-    async def mux(apdu):
-        nonlocal request, apdu_muxed
-        apdu_muxed = bytes(apdu) == bytes(request)
+    async def mux(req):
+        nonlocal muxed
+        muxed = req
 
     with mocked_stdio(bytes(request)):
-        retcode = qctap_get_assertion.main([false_argument], mux=mux)
-        assert retcode > 0 or sys.stdout.buffer.getvalue()[0] & 0xf0 == 0x60
-        assert not apdu_muxed
+        qctap_get_assertion.main([false_argument], mux=mux)
+
+    assert isinstance(muxed.data, InvalidRequest)
 
 
-def test_allow_list_is_trimmed():
+@pytest.mark.parametrize("argv", ([], [""]))
+def test_missing_argument_fails_closed(argv):
+    request = get_request("GetAssertion")
+    muxed = None
+
+    async def mux(req):
+        nonlocal muxed
+        muxed = req
+
+    with mocked_stdio(bytes(request)):
+        qctap_get_assertion.main(argv, mux=mux)
+
+    assert isinstance(muxed.data, InvalidRequest)
+
+
+def test_restricted_to_authorised_credential():
     request = get_request("GetAssertion")
     argument = get_qrexec_arg("GetAssertion")
 
@@ -84,32 +91,28 @@ def test_allow_list_is_trimmed():
     extended = CborRequestWrapper(GetAssertion(**trimmed_data_dict))
 
     assert len(list(extended.qrexec_args)) == 2
-    assert argument in list(extended.qrexec_args)
 
-    muxed_args = None
+    muxed = None
 
-    async def mux(request_bytes):
-        nonlocal muxed_args
-        muxed_args = list(
-            RequestWrapper.from_bytes(bytes(request_bytes)).qrexec_args)
+    async def mux(req):
+        nonlocal muxed
+        muxed = req
 
     with mocked_stdio(bytes(extended)):
         retcode = qctap_get_assertion.main([argument], mux=mux)
         assert retcode in (None, 0)
 
-    assert muxed_args == [argument]
+    assert list(muxed.qrexec_args) == [argument]
 
 
 def test_rejects_non_assertion():
-    muxed = False
+    muxed = None
 
-    async def mux(_apdu):
+    async def mux(req):
         nonlocal muxed
-        muxed = True
+        muxed = req
 
     with mocked_stdio(get_request_bytes("MakeCredential")):
-        retcode = qctap_get_assertion.main([get_qrexec_arg("GetAssertion")],
-                                           mux=mux)
-        assert retcode == 1
-        assert sys.stdout.buffer.getvalue()
-    assert not muxed
+        qctap_get_assertion.main([get_qrexec_arg("GetAssertion")], mux=mux)
+
+    assert isinstance(muxed.data, InvalidRequest)
