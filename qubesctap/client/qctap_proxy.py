@@ -32,10 +32,11 @@ from types import FrameType
 from typing import Optional, Callable
 
 from fido2.ctap1 import APDU, ApduError, RegistrationData, SignatureData
-from fido2.ctap2 import AssertionResponse, AttestationResponse, Ctap2
+from fido2.ctap2 import AssertionResponse, AttestationResponse
+from fido2.ctap2.pin import ClientPin
 
-from qubesctap.protocol import ApduResponseWrapper, CborResponseWrapper, \
-    RequestWrapper
+from qubesctap.protocol import ApduResponseWrapper, CborRequestWrapper, \
+    CborResponseWrapper, RequestWrapper
 from qubesctap import const, ctap2
 from qubesctap.client import hidemu, uhid
 from qubesctap import util
@@ -106,12 +107,20 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
         """
         Test if RPC `ctap.ClientPin` is allowed
         """
+        probe = CborRequestWrapper(ctap2.ClientPIN(
+            pin_uv_protocol=1,
+            sub_cmd=int(ClientPin.CMD.GET_PIN_RETRIES),
+            key_agreement=None,
+            pin_uv_param=None,
+            new_pin_enc=None,
+            pin_hash_enc=None,
+            permissions=None,
+            permissions_rpid=None,
+        ))
         try:
             # try to send some info
             _ = await self.qrexec_transaction(
-                RequestWrapper.from_bytes(
-                    chr(Ctap2.CMD.GET_INFO).encode()),
-                rpcname='ctap.ClientPin'
+                probe, rpcname='ctap.ClientPin'
             )
         except ApduError as err:
             if err.code == APDU.USE_NOT_SATISFIED:
