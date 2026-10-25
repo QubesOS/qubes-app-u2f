@@ -52,6 +52,15 @@ async def main_async(mux=default_mux):
     except InvalidCommandError:
         pass
 
+    if request.discoverable:
+        try:
+            qrexec_arg = request.app_id
+            await qrexec_register_argument(
+                'u2f.AuthenticateDiscoverable',
+                qrexec_arg)
+        except InvalidCommandError:
+            pass
+
 def main(mux=default_mux):
     """Main routine of ``u2f.Register`` qrexec call"""
     asyncio.run(main_async(mux))
