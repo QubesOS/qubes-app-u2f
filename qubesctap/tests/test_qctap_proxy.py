@@ -35,7 +35,7 @@ import qubesctap.client.qctap_proxy as entry
 from qubesctap.client import uhid, qctap_proxy
 from qubesctap.protocol import CborResponseWrapper, RequestWrapper
 from qubesctap.tests.conftest import get_request, \
-    get_response_bytes, get_response_class, FakeQrexecClient
+    get_response_bytes, get_response_class, get_request, FakeQrexecClient
 
 TEST_HID_NAME = 'Qubes CTAP test device'
 TEST_HID_BUS = uhid.BUS.BLUETOOTH
@@ -144,6 +144,7 @@ async def test_handle_fido2_get_assertion_retries(monkeypatch):
 
     class FakeReq:
         qrexec_args = ["aaa", "bbb"]
+        discoverable = False
 
     calls = {"n": 0}
 
@@ -239,3 +240,26 @@ def test_main_calls_asyncio_run(monkeypatch):
 
     entry.main_async.assert_called_once_with(None)
     run_mock.assert_called_once_with(sentinel)
+
+
+@pytest.mark.asyncio
+async def test_get_assertion_discoverable_args(monkeypatch):
+    """A GetAssertion with an empty allowList (discoverable credential) routes
+    to a separate service with only relying party id in the qrexec
+    argument"""
+
+    dev = qctap_proxy.CTAPHIDQrexecDevice("some-vm", name="x")
+
+    request = get_request("GetAssertionDiscoverable")
+
+    captured = {}
+
+    async def fake_qrexec(_req, rpcname):
+        captured["rpcname"] = rpcname
+        return get_response_bytes("GetAssertionDiscoverable")
+
+    monkeypatch.setattr(dev, "qrexec_transaction", fake_qrexec)
+
+    await dev.handle_fido2_get_assertion(request)
+
+    assert captured["rpcname"] == "u2f.AuthenticateDiscoverable+webauthn.io"

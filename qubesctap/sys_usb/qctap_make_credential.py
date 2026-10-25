@@ -20,6 +20,7 @@
 
 """Qrexec call: u2f.Register"""
 
+import argparse
 import asyncio
 import logging
 import os
@@ -29,15 +30,27 @@ from qubesctap.protocol import InvalidCommandError, RequestWrapper
 from qubesctap import sys_usb, const, ctap1, ctap2
 from qubesctap.sys_usb.mux import mux as default_mux
 
+# pylint: disable=duplicate-code
+parser = argparse.ArgumentParser()
+parser.add_argument('--discoverable', action='store_true')
+parser.add_argument('argument', metavar='QREXEC_SERVICE_ARGUMENT',
+                    default=os.getenv('QREXEC_SERVICE_ARGUMENT'),
+                    nargs='?')
 
-async def main_async(mux=default_mux):
+async def main_async(args=None, mux=default_mux):
     """Main async routine of ``u2f.Register`` qrexec call"""
 
+    args = parser.parse_args(args)
     sys_usb.setup_logging()
 
     request = RequestWrapper.from_bytes(
         sys.stdin.buffer.read(),
         expected_type=(ctap1.Register, ctap2.MakeCredential))
+
+    if request.discoverable != args.discoverable:
+        return 1
+    if request.discoverable and request.app_id != args.argument:
+        return 1
 
     response = await mux(request)
 
@@ -52,9 +65,18 @@ async def main_async(mux=default_mux):
     except InvalidCommandError:
         pass
 
-def main(mux=default_mux):
+    if request.discoverable:
+        try:
+            qrexec_arg = request.app_id
+            await qrexec_register_argument(
+                'u2f.AuthenticateDiscoverable',
+                qrexec_arg)
+        except InvalidCommandError:
+            pass
+
+def main(args=None, mux=default_mux):
     """Main routine of ``u2f.Register`` qrexec call"""
-    asyncio.run(main_async(mux))
+    return asyncio.run(main_async(args, mux))
 
 
 async def qrexec_register_argument(rpcname, argument, frontend=None):

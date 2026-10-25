@@ -156,14 +156,24 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
 
     async def handle_fido2_make_credential(self, cbor):
         self.log.getChild('ctap').debug('handle_fido2_make_credential()')
-        response = await self.qrexec_transaction(
-            cbor, rpcname='u2f.Register')
+        if cbor.discoverable:
+            response = await self.qrexec_transaction(
+                cbor, rpcname=f'u2f.RegisterDiscoverable+{cbor.app_id}')
+        else:
+            response = await self.qrexec_transaction(
+                cbor, rpcname='u2f.Register')
         return CborResponseWrapper.from_bytes(
             response, expected_type=AttestationResponse)
 
     async def handle_fido2_get_assertion(self, cbor):
         self.log.getChild('ctap').debug('handle_fido2_get_assertion()')
         self.log.getChild('ctap').debug('%s', str(list(cbor.qrexec_args)))
+        if cbor.discoverable:
+            response = await self.qrexec_transaction(
+                cbor, rpcname=f'u2f.AuthenticateDiscoverable+{cbor.app_id}')
+            return CborResponseWrapper.from_bytes(
+                response, expected_type=AssertionResponse)
+
         for qrexec_arg in cbor.qrexec_args:
             # pylint: disable=broad-except
             try:

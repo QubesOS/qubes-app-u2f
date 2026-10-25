@@ -1,2 +1,2 @@
 #!/bin/sh
-exec /usr/bin/qctap-get-assertion "$@"
+exec /usr/bin/qctap-get-assertion -- "$@"

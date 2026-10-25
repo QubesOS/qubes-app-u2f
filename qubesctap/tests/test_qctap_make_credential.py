@@ -44,8 +44,11 @@ def test_key_handle_match(mock_qrexec_register_argument, action):
         return response
 
     with mocked_stdio(get_request_bytes("MakeCredential")):
-        retcode = qctap_make_credential.main(mux)
-        assert retcode in (None, 0) # main function failed
+        retcode = qctap_make_credential.main(["--"], mux=mux)
+        if action != "CtapError":
+            assert retcode in (None, 0) # main function failed
+        else:
+            assert retcode not in (None, 0)
         assert not sys.stdout.buffer.getvalue()
 
     assert not isinstance(muxed.data, InvalidRequest)
@@ -58,6 +61,96 @@ def test_key_handle_match(mock_qrexec_register_argument, action):
 
 
 @patch('qubesctap.sys_usb.qctap_make_credential.qrexec_register_argument')
+def test_make_discoverable(mock_qrexec_register_argument):
+    request = get_request_bytes("MakeCredentialDiscoverable")
+    response = get_response("MakeCredentialDiscoverable")
+    qrexec_arg = get_qrexec_arg("MakeCredentialDiscoverable")
+    muxed = None
+
+    async def mux(req):
+        nonlocal muxed
+        muxed = req
+        return response
+
+    with mocked_stdio(request):
+        retcode = qctap_make_credential.main(["--discoverable", "--", qrexec_arg], mux)
+        assert retcode in (None, 0) # main function failed
+        assert not sys.stdout.buffer.getvalue()
+
+    assert not isinstance(muxed.data, InvalidRequest)
+
+    expected_arg = f"{get_qrexec_arg("MakeCredential")}+{get_app_id("MakeCredential")}"
+    assert (("u2f.Authenticate", expected_arg), {}) in mock_qrexec_register_argument.mock_calls
+    assert (("u2f.AuthenticateDiscoverable", get_app_id("MakeCredential")), {}) in mock_qrexec_register_argument.mock_calls
+
+
+@patch('qubesctap.sys_usb.qctap_make_credential.qrexec_register_argument')
+def test_make_discoverable_refuse(mock_qrexec_register_argument):
+    request = get_request_bytes("MakeCredentialDiscoverable")
+    response = get_response("MakeCredentialDiscoverable")
+    qrexec_arg = get_qrexec_arg("MakeCredentialDiscoverable")
+    muxed = None
+
+    async def mux(req):
+        nonlocal muxed
+        muxed = req
+        return response
+
+    with mocked_stdio(request):
+        retcode = qctap_make_credential.main(["--"], mux=mux)
+        assert retcode not in (None, 0) # main function failed
+        assert not sys.stdout.buffer.getvalue()
+
+    assert muxed is None
+    assert mock_qrexec_register_argument.mock_calls == []
+
+
+@patch('qubesctap.sys_usb.qctap_make_credential.qrexec_register_argument')
+def test_make_discoverable_refuse_mismatch(mock_qrexec_register_argument):
+    request = get_request_bytes("MakeCredentialDiscoverable")
+    response = get_response("MakeCredentialDiscoverable")
+    qrexec_arg = get_qrexec_arg("MakeCredentialDiscoverable")
+    muxed = None
+
+    async def mux(req):
+        nonlocal muxed
+        muxed = req
+        return response
+
+    with mocked_stdio(request):
+        retcode = qctap_make_credential.main(["--discoverable", "--", "invalid"], mux)
+        assert retcode not in (None, 0) # main function failed
+        assert not sys.stdout.buffer.getvalue()
+
+    assert muxed is None
+    assert mock_qrexec_register_argument.mock_calls == []
+
+
+@patch('qubesctap.sys_usb.qctap_make_credential.qrexec_register_argument')
+def test_make_nondiscoverable(mock_qrexec_register_argument):
+    request = get_request_bytes("MakeCredential")
+    response = get_response("MakeCredential")
+    muxed = None
+
+    async def mux(req):
+        nonlocal muxed
+        muxed = req
+        return response
+
+    with mocked_stdio(request):
+        retcode = qctap_make_credential.main(["--"], mux=mux)
+        assert retcode in (None, 0) # main function failed
+        assert not sys.stdout.buffer.getvalue()
+
+    assert not isinstance(muxed.data, InvalidRequest)
+
+    expected_arg = f"{get_qrexec_arg("MakeCredential")}+{get_app_id("MakeCredential")}"
+    assert (("u2f.Authenticate", expected_arg), {}) in mock_qrexec_register_argument.mock_calls
+    assert (("u2f.AuthenticateDiscoverable", get_app_id("MakeCredential")), {}) not in mock_qrexec_register_argument.mock_calls
+
+
+
+@patch('qubesctap.sys_usb.qctap_make_credential.qrexec_register_argument')
 def test_rejects_non_registration(_mock_qrexec_register_argument):
     muxed = None
 
@@ -67,6 +160,6 @@ def test_rejects_non_registration(_mock_qrexec_register_argument):
         return get_response("CtapError")
 
     with mocked_stdio(get_request_bytes("GetAssertion")):
-        qctap_make_credential.main(mux)
+        qctap_make_credential.main(["--"], mux=mux)
 
     assert isinstance(muxed.data, InvalidRequest)

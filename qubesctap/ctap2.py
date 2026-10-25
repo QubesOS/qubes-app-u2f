@@ -34,7 +34,7 @@ from fido2.ctap2.base import Ctap2, args, _CborDataObject, \
     AttestationResponse, AssertionResponse
 from fido2.webauthn import PublicKeyCredentialRpEntity, Aaguid
 
-from qubesctap.util import qrexec_arg
+from qubesctap.util import qrexec_arg, encode_rp_id
 
 
 @dataclass(eq=False, frozen=True, kw_only=True)
