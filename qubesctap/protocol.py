@@ -338,7 +338,19 @@ class ApduRequestWrapper(RequestWrapper):
         """
         if not isinstance(self.data, ctap1.Authenticate):
             raise InvalidCommandError()
-        return [qrexec_arg(self.data.key_handle)]
+        return [
+            qrexec_arg(self.data.key_handle) + "+" + self.data.app_id,
+            qrexec_arg(self.data.key_handle),
+        ]
+
+    @property
+    def app_id(self) -> str:
+        """
+        Returns application ("relying party") identifier
+        """
+        if not isinstance(self.data, ctap1.Register):
+            raise InvalidCommandError()
+        return self.data.app_id
 
     def restrict_to_credential(self, credential_id_hash):
         """ctap1.Authenticate can transport only one argument"""

@@ -190,11 +190,17 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
 
     async def handle_u2f_authenticate(self, apdu):
         self.log.getChild('ctap').debug('handle_u2f_authenticate()')
-        untrusted_response = await self.qrexec_transaction(
-            apdu, rpcname=f'u2f.Authenticate+{tuple(apdu.qrexec_args)[0]}')
-        response = ApduResponseWrapper.from_bytes(
-            untrusted_response, expected_type=SignatureData)
-        return response
+        for qrexec_arg in apdu.qrexec_args:
+            # pylint: disable=broad-except
+            try:
+                untrusted_response = await self.qrexec_transaction(
+                    apdu, rpcname=f'u2f.Authenticate+{qrexec_arg}')
+                response = ApduResponseWrapper.from_bytes(
+                    untrusted_response, expected_type=SignatureData)
+                return response
+            except Exception as err:
+                self.log.getChild('ctap').error('%s', str(err))
+        return ApduResponseWrapper(ApduError(APDU.USE_NOT_SATISFIED))
 
 
     async def handle_u2f_version(self, apdu):
