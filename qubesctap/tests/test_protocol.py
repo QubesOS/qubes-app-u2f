@@ -118,7 +118,10 @@ def test_from_bytes_restricts_to_credential():
     request = RequestWrapper.from_bytes(
         get_request_bytes("GetAssertion"), expected_type=expected,
         credential_id_hash=arg)
-    assert list(request.qrexec_args) == [arg]
+    expected_args  = [arg]
+    if "+" in arg:
+        expected_args.append(arg.split("+")[0])
+    assert list(request.qrexec_args) == expected_args
 
     # empty
     rejected = RequestWrapper.from_bytes(
@@ -130,4 +133,4 @@ def test_from_bytes_restricts_to_credential():
     unrestricted = RequestWrapper.from_bytes(
         get_request_bytes("GetAssertion"), expected_type=expected)
     assert not isinstance(unrestricted.data, InvalidRequest)
-    assert list(unrestricted.qrexec_args) == [arg]
+    assert list(unrestricted.qrexec_args) == expected_args

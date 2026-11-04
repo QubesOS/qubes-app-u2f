@@ -36,7 +36,7 @@ from fido2.ctap1 import Ctap1, RegistrationData, SignatureData, APDU, ApduError
 from fido2.ctap2 import Ctap2, AssertionResponse, AttestationResponse
 
 from qubesctap import ctap1, ctap2
-from qubesctap.util import qrexec_arg, int_to_bytes
+from qubesctap.util import qrexec_arg, int_to_bytes, encode_rp_id
 
 CTAP1_ACCEPTABLE_RESPONSES = (RegistrationData, SignatureData)
 CTAP2_ACCEPTABLE_RESPONSES = (AssertionResponse, AttestationResponse,
@@ -137,7 +137,7 @@ class RequestWrapper(CommunicatWrapper, ABC):
 
     @staticmethod
     def from_bytes(
-            untrusted_data: bytes, expected_type=None, credential_id_hash=None
+            untrusted_data: bytes, expected_type=None, credential_id_hash=None, app_id=None
     ) -> "RequestWrapper":
         """
         Parse, and *verify*, a CTAP1/CTAP2 request in one step.
@@ -150,7 +150,11 @@ class RequestWrapper(CommunicatWrapper, ABC):
         hash the policy authorised); ``None`` (the default) applies no
         credential restriction. When set, the request's allow_list is checked
         and trimmed to that single credential.
+
+        ``app_id`` limits request to specific applicationn (relying party) id -
+        if it doesn't match, the request is refused.
         """
+        # pylint: disable=too-many-branches,too-many-return-statements
         log = logging.getLogger('ctap.request')
 
         disable_protocols = set()
@@ -209,6 +213,15 @@ class RequestWrapper(CommunicatWrapper, ABC):
                 return req_cls(InvalidRequest(reject))
             result.restrict_to_credential(credential_id_hash)
 
+        if app_id is not None:
+            if list(result.qrexec_args):
+                log.warning("refusing: non-empty allow_list for discoverable credential request")
+                return req_cls(InvalidRequest(reject))
+
+            if app_id != result.app_id:
+                log.warning("refusing: relying party does not match")
+                return req_cls(InvalidRequest(reject))
+
         log.debug("return %s", req_cls.__name__)
         return result
 
@@ -242,11 +255,25 @@ class RequestWrapper(CommunicatWrapper, ABC):
         """
         raise NotImplementedError()
 
+    @property
+    def app_id(self) -> str:
+        """
+        Returns application ("relying party") identifier
+        """
+        return ""
+
     def restrict_to_credential(self, credential_id_hash):
         """
         Remove credentials with different hash than the `credential_id_hash`.
         """
         raise NotImplementedError()
+
+    @property
+    def discoverable(self) -> bool:
+        """
+        Whether a request is related to making/using discoverable credential
+        """
+        return False
 
     @property
     def name(self) -> str:
@@ -331,7 +358,19 @@ class ApduRequestWrapper(RequestWrapper):
         """
         if not isinstance(self.data, ctap1.Authenticate):
             raise InvalidCommandError()
-        return [qrexec_arg(self.data.key_handle)]
+        return [
+            qrexec_arg(self.data.key_handle) + "+" + self.data.app_id,
+            qrexec_arg(self.data.key_handle),
+        ]
+
+    @property
+    def app_id(self) -> str:
+        """
+        Returns application ("relying party") identifier
+        """
+        if not isinstance(self.data, ctap1.Register):
+            raise InvalidCommandError()
+        return self.data.app_id
 
     def restrict_to_credential(self, credential_id_hash):
         """ctap1.Authenticate can transport only one argument"""
@@ -361,7 +400,6 @@ class ApduRequestWrapper(RequestWrapper):
         Return snake_case name of request.
         """
         return self.data.ins.name.lower()
-
 
 
 class CborResponseWrapper(ResponseWrapper):
@@ -436,7 +474,19 @@ class CborRequestWrapper(RequestWrapper):
         if self.data.allow_list is None:
             return
         for cred in self.data.allow_list:
+            yield qrexec_arg(cred['id']) + "+" + encode_rp_id(self.data.rp_id)
             yield qrexec_arg(cred['id'])
+
+    @property
+    def app_id(self) -> str:
+        """
+        Returns application ("relying party") identifier
+        """
+        if isinstance(self.data, ctap2.GetAssertion):
+            return encode_rp_id(self.data.rp_id)
+        if isinstance(self.data, ctap2.MakeCredential):
+            return encode_rp_id(self.data.rp.id)
+        raise InvalidCommandError()
 
     def restrict_to_credential(self, credential_id_hash):
         """
@@ -446,12 +496,25 @@ class CborRequestWrapper(RequestWrapper):
             raise InvalidCommandError()
         if self.data.allow_list is None:
             return
+        # discard rp_id suffix
+        credential_id_hash = credential_id_hash.split("+")[0]
         allow_list = [cred for cred in self.data.allow_list
                       if qrexec_arg(cred['id']) == credential_id_hash]
         trimmed_data_dict = {k: v for k, v in self.data.__dict__.items()
                              if not k.startswith("_")}
         trimmed_data_dict["allow_list"] = allow_list
         self.data = ctap2.GetAssertion(**trimmed_data_dict)
+
+    @property
+    def discoverable(self) -> bool:
+        """
+        Whether a request is related to making/using discoverable credential
+        """
+        if isinstance(self.data, ctap2.GetAssertion):
+            return self.data.allow_list is None
+        if isinstance(self.data, ctap2.MakeCredential):
+            return bool(self.data.options and self.data.options.get("rk", False))
+        return False
 
     def execute(self, device) -> ResponseWrapper:
         """

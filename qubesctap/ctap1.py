@@ -272,6 +272,11 @@ class Register(CommandAPDU):
     # pylint: disable=too-few-public-methods
     APDU_INS = Ctap1.INS.REGISTER
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        offset = const.U2F_NONCE_SIZE
+        self.app_id = self.request_data[offset:].hex()
+
     def verify_request_data(self, *, untrusted_request_data):
         assert len(untrusted_request_data
             ) == const.U2F_NONCE_SIZE + const.U2F_APPID_SIZE
@@ -307,6 +312,8 @@ class Authenticate(CommandAPDU):
         # 1 is for key_handle length octet
         offset = const.U2F_NONCE_SIZE + const.U2F_APPID_SIZE + 1
         self.key_handle = self.request_data[offset:]
+        offset2 = const.U2F_NONCE_SIZE
+        self.app_id = self.request_data[offset2:offset - 1].hex()
 
     def verify_p1(self, *, untrusted_p1):
         # this raises ValueError if untrusted_p1 is not one of the enum values

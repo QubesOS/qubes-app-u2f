@@ -64,6 +64,7 @@ make -C Documentation install \
 %{_sysconfdir}/qubes-rpc/ctap.GetInfo
 %{_sysconfdir}/qubes-rpc/u2f.Register
 %{_sysconfdir}/qubes-rpc/u2f.Authenticate
+%{_sysconfdir}/qubes-rpc/u2f.AuthenticateDiscoverable
 %{_sysconfdir}/qubes/post-install.d/30-qubes-ctap.sh
 
 %{_presetdir}/75-qubes-ctapproxy.preset

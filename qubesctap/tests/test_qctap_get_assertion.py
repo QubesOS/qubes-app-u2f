@@ -26,7 +26,7 @@ from qubesctap.ctap2 import GetAssertion
 from qubesctap.protocol import CborRequestWrapper, InvalidRequest
 from qubesctap.sys_usb import qctap_get_assertion
 from qubesctap.tests.conftest import (
-    mocked_stdio, get_qrexec_arg, get_request, get_request_bytes)
+    mocked_stdio, get_qrexec_arg, get_request, get_request_bytes, get_app_id)
 
 
 @pytest.mark.parametrize("action", ("GetAssertion", "Authenticate"))
@@ -45,7 +45,10 @@ def test_key_handle_match(action):
         assert not sys.stdout.buffer.getvalue()
 
     assert not isinstance(muxed.data, InvalidRequest)
-    assert list(muxed.qrexec_args) == [argument]
+    expected  = [argument]
+    if "+" in argument:
+        expected.append(argument.split("+")[0])
+    assert list(muxed.qrexec_args) == expected
 
 
 @pytest.mark.parametrize("action", ("GetAssertion", "Authenticate"))
@@ -90,7 +93,7 @@ def test_restricted_to_authorised_credential():
     trimmed_data_dict["allow_list"] = list(data.allow_list) + [other_cred]
     extended = CborRequestWrapper(GetAssertion(**trimmed_data_dict))
 
-    assert len(list(extended.qrexec_args)) == 2
+    assert len(list(extended.qrexec_args)) == 4
 
     muxed = None
 
@@ -102,7 +105,10 @@ def test_restricted_to_authorised_credential():
         retcode = qctap_get_assertion.main([argument], mux=mux)
         assert retcode in (None, 0)
 
-    assert list(muxed.qrexec_args) == [argument]
+    expected = [argument]
+    if "+" in argument:
+        expected.append(argument.split("+")[0])
+    assert list(muxed.qrexec_args) == expected
 
 
 def test_rejects_non_assertion():
@@ -114,5 +120,43 @@ def test_rejects_non_assertion():
 
     with mocked_stdio(get_request_bytes("MakeCredential")):
         qctap_get_assertion.main([get_qrexec_arg("GetAssertion")], mux=mux)
+
+    assert isinstance(muxed.data, InvalidRequest)
+
+
+def test_app_id_match():
+    request = get_request("GetAssertionDiscoverable")
+    app_id = get_app_id("GetAssertionDiscoverable")
+    argument = get_qrexec_arg("GetAssertion")
+    muxed = None
+
+    async def mux(req):
+        nonlocal muxed
+        muxed = req
+
+    with mocked_stdio(bytes(request)):
+        retcode = qctap_get_assertion.main(
+            ["--discoverable", app_id], mux=mux
+        )
+        assert retcode in (None, 0)
+        assert not sys.stdout.buffer.getvalue()
+
+    assert not isinstance(muxed.data, InvalidRequest)
+    assert muxed.app_id == app_id
+
+
+def test_key_handle_mismatch():
+    request = get_request("GetAssertionDiscoverable")
+    false_argument = "invalid"
+    muxed = None
+
+    async def mux(req):
+        nonlocal muxed
+        muxed = req
+
+    with mocked_stdio(bytes(request)):
+        qctap_get_assertion.main(
+            ["--discoverable", false_argument], mux=mux
+        )
 
     assert isinstance(muxed.data, InvalidRequest)

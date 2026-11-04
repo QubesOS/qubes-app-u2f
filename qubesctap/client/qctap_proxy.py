@@ -164,6 +164,12 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
     async def handle_fido2_get_assertion(self, cbor):
         self.log.getChild('ctap').debug('handle_fido2_get_assertion()')
         self.log.getChild('ctap').debug('%s', str(list(cbor.qrexec_args)))
+        if cbor.discoverable:
+            response = await self.qrexec_transaction(
+                cbor, rpcname=f'u2f.AuthenticateDiscoverable+{cbor.app_id}')
+            return CborResponseWrapper.from_bytes(
+                response, expected_type=AssertionResponse)
+
         for qrexec_arg in cbor.qrexec_args:
             # pylint: disable=broad-except
             try:
@@ -190,11 +196,17 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
 
     async def handle_u2f_authenticate(self, apdu):
         self.log.getChild('ctap').debug('handle_u2f_authenticate()')
-        untrusted_response = await self.qrexec_transaction(
-            apdu, rpcname=f'u2f.Authenticate+{tuple(apdu.qrexec_args)[0]}')
-        response = ApduResponseWrapper.from_bytes(
-            untrusted_response, expected_type=SignatureData)
-        return response
+        for qrexec_arg in apdu.qrexec_args:
+            # pylint: disable=broad-except
+            try:
+                untrusted_response = await self.qrexec_transaction(
+                    apdu, rpcname=f'u2f.Authenticate+{qrexec_arg}')
+                response = ApduResponseWrapper.from_bytes(
+                    untrusted_response, expected_type=SignatureData)
+                return response
+            except Exception as err:
+                self.log.getChild('ctap').error('%s', str(err))
+        return ApduResponseWrapper(ApduError(APDU.USE_NOT_SATISFIED))
 
 
     async def handle_u2f_version(self, apdu):
