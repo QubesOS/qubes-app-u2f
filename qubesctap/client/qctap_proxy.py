@@ -107,7 +107,7 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
         """
         Test if RPC `ctap.ClientPin` is allowed
         """
-        probe = CborRequestWrapper(ctap2.ClientPIN(
+        probe = ctap2.ClientPIN(
             pin_uv_protocol=1,
             sub_cmd=int(ClientPin.CMD.GET_PIN_RETRIES),
             key_agreement=None,
@@ -116,11 +116,12 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
             pin_hash_enc=None,
             permissions=None,
             permissions_rpid=None,
-        ))
+        )
         try:
             # try to send some info
             _ = await self.qrexec_transaction(
-                probe, rpcname='ctap.ClientPin'
+                CborRequestWrapper(probe),
+                rpcname=f'ctap.ClientPin+{probe.qrexec_arg}'
             )
         except ApduError as err:
             if err.code == APDU.USE_NOT_SATISFIED:
@@ -150,7 +151,7 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
     async def handle_fido2_client_pin(self, cbor):
         self.log.getChild('ctap').debug('handle_fido2_client_pin()')
         response = await self.qrexec_transaction(
-            cbor, rpcname='ctap.ClientPin')
+            cbor, rpcname=f'ctap.ClientPin+{cbor.data.qrexec_arg}')
         return CborResponseWrapper.from_bytes(
             response, expected_type=ctap2.ClientPINResponse)
 

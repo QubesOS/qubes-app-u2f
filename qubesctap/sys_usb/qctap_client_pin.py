@@ -22,24 +22,47 @@
 
 # pylint: disable=duplicate-code
 
+import argparse
 import asyncio
+import logging
+import os
 import sys
 
-from qubesctap.protocol import RequestWrapper
+from fido2.ctap import CtapError
+
+from qubesctap.protocol import CborRequestWrapper, InvalidRequest, \
+    RequestWrapper
 from qubesctap import sys_usb, ctap2
 from qubesctap.sys_usb.mux import mux as default_mux
+from qubesctap.util import int_to_bytes
 
-async def main_async(mux=default_mux):
+parser = argparse.ArgumentParser()
+parser.add_argument('subcommand', metavar='QREXEC_SERVICE_ARGUMENT',
+                    default=os.getenv('QREXEC_SERVICE_ARGUMENT'),
+                    nargs='?')
+
+
+async def main_async(args=None, mux=default_mux):
     """Main async routine of ``ctap.ClientPin`` qrexec call"""
 
+    args = parser.parse_args(args)
     sys_usb.setup_logging()
     request = RequestWrapper.from_bytes(
         sys.stdin.buffer.read(), expected_type=ctap2.ClientPIN)
+
+    if isinstance(request.data, ctap2.ClientPIN) \
+            and request.data.qrexec_arg != args.subcommand:
+        logging.getLogger('ctap').warning(
+            'refusing ClientPIN %s: qrexec argument is %r',
+            request.data.qrexec_arg, args.subcommand)
+        request = CborRequestWrapper(InvalidRequest(
+            int_to_bytes(int(CtapError.ERR.INVALID_COMMAND))))
+
     await mux(request)
 
-def main(mux=default_mux):
+def main(args=None, mux=default_mux):
     """Main function."""
-    return asyncio.run(main_async(mux))
+    return asyncio.run(main_async(args, mux))
 
 if __name__ == '__main__':
-    asyncio.run(main_async())
+    sys.exit(main())

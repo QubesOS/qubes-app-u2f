@@ -70,7 +70,7 @@ async def test_pin_allowed_denied_use_not_satisfied(monkeypatch):
     dev = qctap_proxy.CTAPHIDQrexecDevice("some-vm", name="x")
 
     async def fake_qrexec(_req, rpcname: str):
-        assert rpcname == "ctap.ClientPin"
+        assert rpcname == "ctap.ClientPin+get-pin-retries"
         raise ApduError(APDU.USE_NOT_SATISFIED)
 
     monkeypatch.setattr(dev, "qrexec_transaction", fake_qrexec)
@@ -83,13 +83,28 @@ async def test_pin_allowed_true(monkeypatch):
     dev = qctap_proxy.CTAPHIDQrexecDevice("some-vm", name="x")
 
     async def fake_qrexec(_req, rpcname: str):
-        assert rpcname == "ctap.ClientPin"
+        assert rpcname == "ctap.ClientPin+get-pin-retries"
         return b"\x00\xa0"  # a valid-ish "success" response (status 0 + empty map)
 
     monkeypatch.setattr(dev, "qrexec_transaction", fake_qrexec)
 
     allowed = await dev._pin_allowed()
     assert allowed is True
+
+@pytest.mark.asyncio
+async def test_client_pin_sends_subcommand_argument(monkeypatch):
+    """ClientPIN request is sent with its subcommand as qrexec argument."""
+    dev = qctap_proxy.CTAPHIDQrexecDevice("some-vm", name="x")
+    rpcnames = []
+
+    async def fake_qrexec(_req, rpcname: str):
+        rpcnames.append(rpcname)
+        return get_response_bytes("ClientPIN")
+
+    monkeypatch.setattr(dev, "qrexec_transaction", fake_qrexec)
+
+    await dev.handle_fido2_client_pin(get_request("ClientPIN"))
+    assert rpcnames == ["ctap.ClientPin+get-token-using-pin-legacy"]
 
 @pytest.mark.asyncio
 async def test_modify_info_removes_pin_protocols(monkeypatch):

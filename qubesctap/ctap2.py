@@ -32,6 +32,7 @@ from fido2 import cbor
 from fido2.ctap import CtapError
 from fido2.ctap2.base import Ctap2, args, _CborDataObject, \
     AttestationResponse, AssertionResponse
+from fido2.ctap2.pin import ClientPin
 from fido2.webauthn import PublicKeyCredentialRpEntity, Aaguid
 
 from qubesctap.util import qrexec_arg
@@ -438,6 +439,16 @@ class ClientPIN(Ctap2Request):
     pin_hash_enc: Optional[bytes]
     permissions: Optional[int]
     permissions_rpid: Optional[str]
+
+    @property
+    def qrexec_arg(self) -> str:
+        """
+        Returns the subcommand as qrexec argument, e.g. ``set-pin``.
+        """
+        try:
+            return ClientPin.CMD(self.sub_cmd).name.lower().replace('_', '-')
+        except ValueError:
+            return f'subcmd-{self.sub_cmd}'
 
     def execute(self, ctap: Ctap2) -> ClientPINResponse:
         """
