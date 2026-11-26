@@ -27,6 +27,7 @@ import hashlib
 import itertools
 import os
 import socket
+import string
 
 
 class raw_data:
@@ -193,6 +194,18 @@ def qrexec_arg(key_handle):
     """Argument for qrexec call to identify the key"""
     # use first 128 bits of SHA-256, or 32 hexadecimal digits
     return hashlib.sha256(key_handle).hexdigest()[:32]
+
+
+def encode_rp_id(rp_id):
+    """Encodes Relying Party ID for qrexec argument"""
+    # leave out + and _ intentionally, to allow then as escape chars
+    allowed = set(string.ascii_letters + string.digits + "-.")
+    encoded = "".join(
+        c if c in allowed
+        else f"_{ord(c):02x}"
+        for c in rp_id
+    )
+    return encoded
 
 
 def int_to_bytes(num):

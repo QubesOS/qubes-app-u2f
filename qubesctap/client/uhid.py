@@ -430,9 +430,10 @@ class UHIDDevice:
         event_type = UHID(event.type)
         # pylint: disable=consider-using-f-string
         self.log.getChild('uhid').debug(
-            'write_uhid_req(event.type={!s}, *{})'.format(event_type,
-                ''.join(', {}={}'.format(k, util.maybe_hexlify(v))
-                    for k, v in kwargs.items())))
+            'write_uhid_req(event.type=%s, %s)',
+            event_type,
+            ''.join(', {}={}'.format(k, util.maybe_hexlify(v))
+                    for k, v in kwargs.items()))
 
         try:
             union = getattr(event, event_type.name.lower())

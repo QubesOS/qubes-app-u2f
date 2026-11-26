@@ -30,7 +30,8 @@ from qubesctap import sys_usb, ctap1, ctap2
 from qubesctap.sys_usb.mux import mux as default_mux
 
 parser = argparse.ArgumentParser()
-parser.add_argument('credential_id_hash', metavar='QREXEC_SERVICE_ARGUMENT',
+parser.add_argument('--discoverable', action='store_true')
+parser.add_argument('argument', metavar='QREXEC_SERVICE_ARGUMENT',
                     default=os.getenv('QREXEC_SERVICE_ARGUMENT'),
                     nargs='?')
 
@@ -42,10 +43,21 @@ async def main_async(args=None, mux=default_mux):
     sys_usb.setup_logging()
 
     # A missing qrexec argument is replaced with "" so the request is refused
+    if args.discoverable:
+        kwargs = {
+            "expected_type": (ctap2.GetAssertion,),
+            "app_id": args.argument or "",
+        }
+    else:
+        kwargs = {
+            "expected_type": (ctap1.Authenticate, ctap2.GetAssertion),
+            "credential_id_hash": args.argument or "",
+        }
+
     request = RequestWrapper.from_bytes(
         sys.stdin.buffer.read(),
-        expected_type=(ctap1.Authenticate, ctap2.GetAssertion),
-        credential_id_hash=args.credential_id_hash or "")
+        **kwargs
+    )
 
     await mux(request)
     return 0
