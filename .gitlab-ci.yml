@@ -1,15 +1,15 @@
 include:
-- file: /r4.2/gitlab-base.yml
-  project: qubesos/qubes-continuous-integration
-- file: /r4.2/gitlab-host.yml
-  project: qubesos/qubes-continuous-integration
-- file: /r4.2/gitlab-vm.yml
-  project: qubesos/qubes-continuous-integration
 - file: /r4.3/gitlab-base.yml
   project: qubesos/qubes-continuous-integration
 - file: /r4.3/gitlab-host.yml
   project: qubesos/qubes-continuous-integration
 - file: /r4.3/gitlab-vm.yml
+  project: qubesos/qubes-continuous-integration
+- file: /devel/gitlab-base.yml
+  project: qubesos/qubes-continuous-integration
+- file: /devel/gitlab-host.yml
+  project: qubesos/qubes-continuous-integration
+- file: /devel/gitlab-vm.yml
   project: qubesos/qubes-continuous-integration
 
 checks:tests:
