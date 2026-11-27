@@ -32,7 +32,6 @@ from fido2 import cbor
 from fido2.ctap import CtapError
 from fido2.ctap2.base import Ctap2, args, _CborDataObject, \
     AttestationResponse, AssertionResponse
-from fido2.ctap2.pin import ClientPin
 from fido2.webauthn import PublicKeyCredentialRpEntity, Aaguid
 
 from qubesctap.util import qrexec_arg
@@ -405,6 +404,19 @@ class ClientPINResponse(Ctap2Dataclass):
     uv_retries: Optional[int]
 
 
+# Kept here so a fido2 update can't rename policy arguments
+CLIENT_PIN_QREXEC_ARGS = {
+    0x01: 'get-pin-retries',
+    0x02: 'get-key-agreement',
+    0x03: 'set-pin',
+    0x04: 'change-pin',
+    0x05: 'get-token-using-pin-legacy',
+    0x06: 'get-token-using-uv',
+    0x07: 'get-uv-retries',
+    0x09: 'get-token-using-pin',
+}
+
+
 @Ctap2RequestRegister.add(Ctap2.CMD.CLIENT_PIN)
 @dataclass(eq=False, frozen=True)
 class ClientPIN(Ctap2Request):
@@ -441,14 +453,14 @@ class ClientPIN(Ctap2Request):
     permissions_rpid: Optional[str]
 
     @property
-    def qrexec_arg(self) -> str:
+    def qrexec_arg(self) -> Optional[str]:
         """
-        Returns the subcommand as qrexec argument, e.g. ``set-pin``.
+        Returns the subcommand as qrexec argument, e.g. ``set-pin``,
+        or ``None`` for an unknown subcommand.
         """
-        try:
-            return ClientPin.CMD(self.sub_cmd).name.lower().replace('_', '-')
-        except ValueError:
-            return f'subcmd-{self.sub_cmd}'
+        if isinstance(self.sub_cmd, bool) or not isinstance(self.sub_cmd, int):
+            return None
+        return CLIENT_PIN_QREXEC_ARGS.get(self.sub_cmd)
 
     def execute(self, ctap: Ctap2) -> ClientPINResponse:
         """

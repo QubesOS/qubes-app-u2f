@@ -47,18 +47,24 @@ async def main_async(args=None, mux=default_mux):
 
     args = parser.parse_args(args)
     sys_usb.setup_logging()
+    if not args.subcommand:
+        # An empty reply makes an older frontend hide PIN support
+        logging.getLogger('ctap').warning('refusing ClientPIN: no argument')
+        return 1
+
     request = RequestWrapper.from_bytes(
         sys.stdin.buffer.read(), expected_type=ctap2.ClientPIN)
 
     if isinstance(request.data, ctap2.ClientPIN) \
             and request.data.qrexec_arg != args.subcommand:
         logging.getLogger('ctap').warning(
-            'refusing ClientPIN %s: qrexec argument is %r',
-            request.data.qrexec_arg, args.subcommand)
+            'refusing ClientPIN sub_cmd %r: qrexec argument is %r',
+            request.data.sub_cmd, args.subcommand)
         request = CborRequestWrapper(InvalidRequest(
             int_to_bytes(int(CtapError.ERR.INVALID_COMMAND))))
 
     await mux(request)
+    return 0
 
 def main(args=None, mux=default_mux):
     """Main function."""

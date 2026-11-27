@@ -22,6 +22,7 @@ from unittest.mock import patch
 
 import pytest
 import asyncio
+from dataclasses import replace
 import signal
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
@@ -105,6 +106,18 @@ async def test_client_pin_sends_subcommand_argument(monkeypatch):
 
     await dev.handle_fido2_client_pin(get_request("ClientPIN"))
     assert rpcnames == ["ctap.ClientPin+get-token-using-pin-legacy"]
+
+@pytest.mark.asyncio
+async def test_client_pin_unknown_subcommand_not_sent(monkeypatch):
+    """Unknown ClientPIN subcommand is refused without a qrexec call."""
+    dev = qctap_proxy.CTAPHIDQrexecDevice("some-vm", name="x")
+    monkeypatch.setattr(dev, "qrexec_transaction", AsyncMock())
+    request = get_request("ClientPIN")
+    request.data = replace(request.data, sub_cmd=8)
+
+    with pytest.raises(ApduError):
+        await dev.handle_fido2_client_pin(request)
+    dev.qrexec_transaction.assert_not_called()
 
 @pytest.mark.asyncio
 async def test_modify_info_removes_pin_protocols(monkeypatch):

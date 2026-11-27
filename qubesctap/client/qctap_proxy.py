@@ -150,6 +150,10 @@ class CTAPHIDQrexecDevice(hidemu.CTAPHIDDevice):
 
     async def handle_fido2_client_pin(self, cbor):
         self.log.getChild('ctap').debug('handle_fido2_client_pin()')
+        if cbor.data.qrexec_arg is None:
+            self.log.getChild('ctap').warning(
+                'refusing unknown ClientPIN sub_cmd %r', cbor.data.sub_cmd)
+            raise ApduError(APDU.USE_NOT_SATISFIED)
         response = await self.qrexec_transaction(
             cbor, rpcname=f'ctap.ClientPin+{cbor.data.qrexec_arg}')
         return CborResponseWrapper.from_bytes(
