@@ -11,7 +11,7 @@ The calls
 * ``u2f.Register``
 * ``u2f.Authenticate+CREDID``
 * ``ctap.GetInfo``
-* ``ctap.ClientPin``
+* ``ctap.ClientPin+SUBCOMMAND``
 * ``ctap.vnd.VENDOR.COMMAND``
 
 Raw ISO 7816-compliant command APDU with extended length encoding should be
@@ -19,6 +19,9 @@ supplied on standard input. The response APDU will arrive on standard output.
 
 `CREDID` is first 128 bits of SHA-256 digest over key handle expressed as
 hexadecimal digits, lower case.
+
+`SUBCOMMAND` is the PIN subcommand of the request, e.g. ``set-pin``. See
+:manpage:`qctap-client-pin(1)`.
 
 `VENDOR` and `COMMAND` are vendor-invented strings. The vendor is also free to
 specify an argument to the qrexec call.

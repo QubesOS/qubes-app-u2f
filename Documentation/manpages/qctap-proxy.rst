@@ -143,8 +143,8 @@ Qrexec calls
     This is the call used for the CTAP_GET_ASSERTION call. It is handled by
     :manpage:`qctap-get-assetion(1)`.
 
-``ctap.ClientPin``
-    This is the call used for the CTAP_MAKE_CREDENTIA call. It is handled by
+``ctap.ClientPin+SUBCOMMAND``
+    This is the call used for the CTAP_CLIENT_PIN call. It is handled by
     :manpage:`qctap-client-pin(1)`.
 
 ``ctap.GetInfo``
